@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sreenidhi Ramani — Firmware &amp; Security Research</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Crect width='24' height='24' fill='%230a0e0e'/%3E%3Cpath d='M6 11V8a6 6 0 1112 0v3' stroke='%23ffb000' stroke-width='2' fill='none'/%3E%3Crect x='4' y='11' width='16' height='10' rx='1.5' fill='%23ffb000'/%3E%3Ccircle cx='12' cy='16' r='1.6' fill='%230a0e0e'/%3E%3C/svg%3E">
 <meta name="description" content="Sreenidhi Ramani — Firmware security researcher and M.S. ECE student at Northeastern University. SOC, GRC, embedded systems security.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,6 +33,10 @@
   body{
     margin:0;
     background:var(--bg);
+    background-image:
+      linear-gradient(rgba(255,176,0,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,176,0,0.035) 1px, transparent 1px);
+    background-size:42px 42px;
     color:var(--fg);
     font-family:var(--mono);
     font-size:15px;
@@ -69,6 +74,7 @@
   .prompt-logo{
     color:var(--fg-dim); font-size:13px; letter-spacing:0.02em; white-space:nowrap;
   }
+  .prompt-logo .lock-icon{ font-size:12px; margin-right:7px; opacity:0.85; }
   .prompt-logo b{ color:var(--accent-2); font-weight:600; }
   .prompt-logo .path{ color:var(--fg-dim); }
   .prompt-logo .caret{ color:var(--accent); animation:blink 1.1s steps(1) infinite; }
@@ -168,25 +174,45 @@
   .section-block{ margin-bottom:42px; }
   .section-block h2{ margin-bottom:18px; }
   .bio-grid{ display:grid; grid-template-columns:1fr; gap:8px; }
-  .job{ border-left:2px solid var(--border); padding-left:18px; margin-bottom:26px; position:relative; }
-  .job::before{
-    content:""; position:absolute; left:-5px; top:4px; width:8px; height:8px; border-radius:50%;
-    background:var(--bg); border:2px solid var(--accent-2);
-  }
+  .job{ border:1px solid var(--border); background:var(--bg-inset); border-radius:var(--radius); padding:18px; transition:border-color .15s, transform .15s; }
+  .job:hover{ border-color:var(--border-bright); transform:translateY(-2px); }
   .job-head{ display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:baseline; margin-bottom:4px; }
   .job-role{ color:#fff; font-weight:600; font-size:15px; }
   .job-org{ color:var(--accent-2); font-size:13.5px; }
   .job-date{ color:var(--muted); font-size:12px; white-space:nowrap; }
   .job ul{ margin:8px 0 0; padding-left:18px; color:var(--fg-dim); font-size:13.5px; }
   .job li{ margin-bottom:5px; }
+  .box-grid{ display:flex; flex-direction:column; gap:14px; }
 
-  .skill-cat{ margin-bottom:16px; }
-  .skill-cat .cat-label{ color:var(--fg); font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; display:block; }
+  .skill-cat{
+    border:1px solid var(--border); background:var(--bg-inset); border-radius:var(--radius);
+    padding:16px 18px; transition:border-color .15s; border-left:3px solid var(--border-bright);
+  }
+  .skill-cat:hover{ border-color:var(--border-bright); }
+  .skill-cat .cat-label{ color:var(--fg); font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; display:block; }
+  .skill-cat.c-firmware{ border-left-color:#ffb000; }
+  .skill-cat.c-firmware .cat-label{ color:#ffb000; }
+  .skill-cat.c-offensive{ border-left-color:#ff6b6b; }
+  .skill-cat.c-offensive .cat-label{ color:#ff6b6b; }
+  .skill-cat.c-defensive{ border-left-color:#57d9c7; }
+  .skill-cat.c-defensive .cat-label{ color:#57d9c7; }
+  .skill-cat.c-forensics{ border-left-color:#b48cff; }
+  .skill-cat.c-forensics .cat-label{ color:#b48cff; }
+  .skill-cat.c-grc{ border-left-color:#7ee787; }
+  .skill-cat.c-grc .cat-label{ color:#7ee787; }
+  .skill-cat.c-languages{ border-left-color:#6fa8dc; }
+  .skill-cat.c-languages .cat-label{ color:#6fa8dc; }
   .pill-row{ display:flex; flex-wrap:wrap; gap:7px; }
   .pill{
     font-size:12px; padding:4px 10px; border:1px solid var(--border-bright); border-radius:20px;
     color:var(--fg-dim); background:var(--bg-inset);
   }
+  .skill-cat.c-firmware .pill{ color:#ffb000; border-color:rgba(255,176,0,0.35); background:rgba(255,176,0,0.06); }
+  .skill-cat.c-offensive .pill{ color:#ff6b6b; border-color:rgba(255,107,107,0.35); background:rgba(255,107,107,0.06); }
+  .skill-cat.c-defensive .pill{ color:#57d9c7; border-color:rgba(87,217,199,0.35); background:rgba(87,217,199,0.06); }
+  .skill-cat.c-forensics .pill{ color:#b48cff; border-color:rgba(180,140,255,0.35); background:rgba(180,140,255,0.06); }
+  .skill-cat.c-grc .pill{ color:#7ee787; border-color:rgba(126,231,135,0.35); background:rgba(126,231,135,0.06); }
+  .skill-cat.c-languages .pill{ color:#6fa8dc; border-color:rgba(111,168,220,0.35); background:rgba(111,168,220,0.06); }
 
   .edu-item{ margin-bottom:16px; }
   .edu-item .deg{ color:#fff; font-weight:600; font-size:14.5px; }
@@ -217,9 +243,20 @@
   .card p{ font-size:13px; color:var(--fg-dim); margin-bottom:12px; flex:1; }
   .card .stack{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
   .card .stack span{ font-size:10.5px; color:var(--fg-dim); background:var(--bg-raised); padding:2px 7px; border-radius:3px; border:1px solid var(--border); }
-  .card .link{ font-size:12.5px; color:var(--accent-2); }
+  .card .link{ font-size:12.5px; color:var(--accent-2); display:block; }
+  .card .link + .link{ margin-top:6px; }
   .card.pub{ border-color:var(--accent-2); }
   .card.pub .tag{ color:var(--accent-2); }
+  .card.tag-firmware{ border-left:3px solid #ffb000; }
+  .card.tag-firmware .tag{ color:#ffb000; }
+  .card.tag-offensive{ border-left:3px solid #ff6b6b; }
+  .card.tag-offensive .tag{ color:#ff6b6b; }
+  .card.tag-ai{ border-left:3px solid #b48cff; }
+  .card.tag-ai .tag{ color:#b48cff; }
+  .card.tag-grc{ border-left:3px solid #7ee787; }
+  .card.tag-grc .tag{ color:#7ee787; }
+  .card.tag-published{ border-left:3px solid #57d9c7; }
+  .card.tag-published .tag{ color:#57d9c7; }
   .repo-stats{
     display:flex; gap:14px; font-size:11.5px; color:var(--muted); margin-bottom:10px; min-height:15px;
   }
@@ -257,6 +294,17 @@
     font-size:12.5px; color:var(--accent); background:var(--accent-soft); border-left:2px solid var(--accent);
     padding:8px 12px; margin:4px 0 14px;
   }
+  .post-accordion{ cursor:pointer; }
+  .post-summary{ cursor:pointer; list-style:none; }
+  .post-summary::-webkit-details-marker{ display:none; }
+  .post-summary .expand-hint{
+    font-size:11px; color:var(--muted); text-transform:none; letter-spacing:0; font-weight:400;
+    margin-left:8px; vertical-align:middle;
+  }
+  .post-accordion:not([open]) .close-hint{ display:none; }
+  .post-accordion[open] .open-hint{ display:none; }
+  .post-body{ margin-top:6px; }
+  .post-accordion:hover{ border-color:var(--border-bright); }
 
   /* ---------- CONTACT ---------- */
   .contact-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:24px; }
@@ -277,6 +325,12 @@
     border-top:1px solid var(--border); padding:24px 0; text-align:center;
     color:var(--muted); font-size:12px;
   }
+  .status-dot{
+    display:inline-block; width:7px; height:7px; border-radius:50%;
+    background:var(--accent-2); margin-right:8px; vertical-align:1px;
+    box-shadow:0 0 6px var(--accent-2); animation:pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
 
   @media (max-width:640px){
     .topbar-inner{ flex-direction:column; align-items:flex-start; }
@@ -292,7 +346,7 @@
 
 <header class="topbar">
   <div class="topbar-inner">
-    <div class="prompt-logo"><b>sreenidhi</b><span class="path">@northeastern:~$</span> <span class="caret">_</span></div>
+    <div class="prompt-logo"><span class="lock-icon">🔒</span><b>sreenidhi</b><span class="path">@northeastern:~$</span> <span class="caret">_</span></div>
     <nav class="tabs" id="navTabs">
       <button data-page="home" class="active"><span class="num">01</span>home</button>
       <button data-page="about"><span class="num">02</span>about</button>
@@ -348,6 +402,7 @@
     <div class="section-block">
       <h2>// experience</h2>
 
+      <div class="box-grid">
       <div class="job">
         <div class="job-head">
           <div><span class="job-role">Research Assistant, CactiLab</span><br><span class="job-org">Northeastern University</span></div>
@@ -402,45 +457,48 @@
           <li>Preparing for the CompTIA Security+ certification</li>
         </ul>
       </div>
+      </div>
     </div>
 
     <div class="section-block">
       <h2>// skills</h2>
-      <div class="skill-cat">
+      <div class="box-grid">
+      <div class="skill-cat c-firmware">
         <span class="cat-label">Firmware &amp; Embedded</span>
         <div class="pill-row">
           <span class="pill">LibFuzzer</span><span class="pill">Boofuzz</span><span class="pill">QEMU</span><span class="pill">ARM Cortex-M</span><span class="pill">FreeRTOS</span><span class="pill">ASAN</span><span class="pill">SARIF</span><span class="pill">ESP8266</span><span class="pill">Arduino</span><span class="pill">MQTT</span>
         </div>
       </div>
-      <div class="skill-cat">
+      <div class="skill-cat c-offensive">
         <span class="cat-label">Offensive Security</span>
         <div class="pill-row">
           <span class="pill">Burp Suite</span><span class="pill">Metasploit</span><span class="pill">Nmap</span><span class="pill">OWASP ZAP</span><span class="pill">Nikto</span><span class="pill">Hydra</span><span class="pill">SQLmap</span><span class="pill">Gobuster</span><span class="pill">Kali Linux</span>
         </div>
       </div>
-      <div class="skill-cat">
+      <div class="skill-cat c-defensive">
         <span class="cat-label">Defensive / SOC</span>
         <div class="pill-row">
           <span class="pill">Splunk</span><span class="pill">Wireshark</span><span class="pill">Snort</span><span class="pill">Autopsy</span><span class="pill">MITRE ATT&amp;CK</span><span class="pill">SIEM</span><span class="pill">Alert Tuning</span><span class="pill">Incident Response</span>
         </div>
       </div>
-      <div class="skill-cat">
+      <div class="skill-cat c-forensics">
         <span class="cat-label">Digital Forensics</span>
         <div class="pill-row">
           <span class="pill">Autopsy</span><span class="pill">Volatility</span><span class="pill">Binwalk</span><span class="pill">John the Ripper</span>
         </div>
       </div>
-      <div class="skill-cat">
+      <div class="skill-cat c-grc">
         <span class="cat-label">GRC</span>
         <div class="pill-row">
           <span class="pill">NIST SP 800-53</span><span class="pill">NIST CSF 2.0</span><span class="pill">SOC 2</span><span class="pill">ISO 27001</span><span class="pill">Risk Registers</span><span class="pill">FIPS 199</span>
         </div>
       </div>
-      <div class="skill-cat">
+      <div class="skill-cat c-languages">
         <span class="cat-label">Languages</span>
         <div class="pill-row">
           <span class="pill">Python</span><span class="pill">C</span><span class="pill">C++</span><span class="pill">Bash</span><span class="pill">SQL</span>
         </div>
+      </div>
       </div>
     </div>
 
@@ -459,6 +517,7 @@
 
     <div class="section-block">
       <h2>// extracurricular</h2>
+      <div class="box-grid">
       <div class="job">
         <div class="job-head">
           <div><span class="job-role">CTF Member</span><br><span class="job-org">NUSec, Northeastern University</span></div>
@@ -503,6 +562,7 @@
           <li>Led end-to-end coordination for multi-day events with 500+ attendees; managed vendor communication, logistics, and on-ground operations across the full event lifecycle</li>
         </ul>
       </div>
+      </div>
       <p class="offduty">Also: 8 years of Bharatanatyam training, and basketball.</p>
     </div>
   </section>
@@ -524,7 +584,7 @@
 
     <div class="proj-grid" id="projGrid">
 
-      <div class="card" data-tags="firmware offensive" data-repo="Sreenidhi15/ShellGuard-POSIX-Shell-with-Exploit-Research-NIST-Controls">
+      <div class="card tag-firmware" data-tags="firmware offensive" data-repo="Sreenidhi15/ShellGuard-POSIX-Shell-with-Exploit-Research-NIST-Controls">
         <span class="tag">Systems Security</span>
         <h3>ShellGuard — POSIX Shell with Exploit Research &amp; NIST Controls</h3>
         <span class="date">Dec 2025 – Feb 2026</span>
@@ -534,7 +594,7 @@
         <a class="link" href="https://github.com/Sreenidhi15/ShellGuard-POSIX-Shell-with-Exploit-Research-NIST-Controls" target="_blank" rel="noopener">View on GitHub →</a>
       </div>
 
-      <div class="card" data-tags="offensive" data-repo="Sreenidhi15/SOC-Home-Lab">
+      <div class="card tag-offensive" data-tags="offensive" data-repo="Sreenidhi15/SOC-Home-Lab">
         <span class="tag">Offensive Security</span>
         <h3>SOC Home Lab — Active Directory Attack &amp; Detection</h3>
         <span class="date">Dec 2025 – Feb 2026</span>
@@ -544,7 +604,7 @@
         <a class="link" href="https://github.com/Sreenidhi15/SOC-Home-Lab" target="_blank" rel="noopener">View on GitHub →</a>
       </div>
 
-      <div class="card" data-tags="firmware ai-security" data-repo="Sreenidhi15/Adaptive-Reconciliation-Based-Post-Quantum-Key-Exchange-for-Energy-Efficient-IoT-Networks">
+      <div class="card tag-firmware" data-tags="firmware ai-security" data-repo="Sreenidhi15/Adaptive-Reconciliation-Based-Post-Quantum-Key-Exchange-for-Energy-Efficient-IoT-Networks">
         <span class="tag">Post-Quantum / IoT</span>
         <h3>Adaptive Reconciliation-Based PQC Key Exchange for IoT</h3>
         <span class="date">with Cherisma Tanduru · EECE 5155</span>
@@ -554,7 +614,7 @@
         <a class="link" href="https://github.com/Sreenidhi15/Adaptive-Reconciliation-Based-Post-Quantum-Key-Exchange-for-Energy-Efficient-IoT-Networks" target="_blank" rel="noopener">View on GitHub →</a>
       </div>
 
-      <div class="card" data-tags="ai-security">
+      <div class="card tag-ai" data-tags="ai-security">
         <span class="tag">Detection Engineering</span>
         <h3>Log Anomaly Detector</h3>
         <p>ML-powered anomaly detection for Windows Event Logs using Isolation Forest, with findings mapped to MITRE ATT&amp;CK and output formatted for SOAR ingestion.</p>
@@ -562,7 +622,7 @@
         <a class="link" href="https://github.com/Sreenidhi15" target="_blank" rel="noopener">View on GitHub →</a>
       </div>
 
-      <div class="card" data-tags="grc ai-security">
+      <div class="card tag-grc" data-tags="grc ai-security">
         <span class="tag">GRC</span>
         <h3>AI-Powered GRC Compliance Gap Analyzer</h3>
         <p>A control-mapping tool spanning NIST SP 800-53, SOC 2, and ISO 27001, backed by a SQLite FTS5 control database and the OpenAI API for gap analysis against uploaded policy documents.</p>
@@ -570,7 +630,7 @@
         <a class="link" href="https://github.com/Sreenidhi15" target="_blank" rel="noopener">View on GitHub →</a>
       </div>
 
-      <div class="card" data-tags="offensive firmware" data-repo="Sreenidhi15/Portable-Ddos-Attack-Simulation-Tool">
+      <div class="card tag-offensive" data-tags="offensive firmware" data-repo="Sreenidhi15/Portable-Ddos-Attack-Simulation-Tool">
         <span class="tag">Networking</span>
         <h3>Portable DDoS Attack Simulation Tool</h3>
         <p>An ESP8266-based portable DDoS simulator, built as an educational research project for network security training and controlled penetration testing.</p>
@@ -579,7 +639,7 @@
         <a class="link" href="https://github.com/Sreenidhi15/Portable-Ddos-Attack-Simulation-Tool" target="_blank" rel="noopener">View on GitHub →</a>
       </div>
 
-      <div class="card" data-tags="offensive" data-repo="Sreenidhi15/Packet-Sniffer-tool">
+      <div class="card tag-offensive" data-tags="offensive" data-repo="Sreenidhi15/Packet-Sniffer-tool">
         <span class="tag">Networking</span>
         <h3>Packet Sniffer Tool</h3>
         <p>A low-level network packet sniffer built with raw sockets in Python, parsing Ethernet, IPv4, TCP, UDP, and ICMP frames directly off the wire.</p>
@@ -593,6 +653,7 @@
         <h3>Cloud Storage Connected Security Safe</h3>
         <p>A physical security safe concept connected to cloud storage for remote monitoring and access control, published in the International Journal for Research in Applied Science &amp; Engineering Technology.</p>
         <div class="repo-stats" data-loading="1">&nbsp;</div>
+        <a class="link" href="https://www.ijraset.com/research-paper/cloud-storage-connected-security-safe" target="_blank" rel="noopener">Read the paper →</a>
         <a class="link" href="https://github.com/Sreenidhi15/Cloud-Storage-Connected-Security-Safe" target="_blank" rel="noopener">View on GitHub →</a>
       </div>
 
@@ -612,15 +673,18 @@
     <h1>Writeups</h1>
     <p class="lede">Notes from the lab and from CTFs — drafts in progress, published as I finish them.</p>
 
-    <div class="post post-full">
-      <div class="post-head">
-        <span class="status published">Published</span>
-        <span class="post-date">Feb 12, 2026 · 1 min read</span>
-      </div>
-      <h3>Welcome to My Blog</h3>
-      <span class="post-tag">meta / welcome</span>
-      <p>Welcome to my corner of the internet. This is where I'll be writing up what I'm actually working on — SOC and blue team practice, pentesting, GRC, and whatever I pick up along the way in CTFs.</p>
+    <details class="post post-full post-accordion">
+      <summary class="post-summary">
+        <div class="post-head">
+          <span class="status published">Published</span>
+          <span class="post-date">Feb 12, 2026 · 1 min read</span>
+        </div>
+        <h3>Welcome to My Blog <span class="expand-hint open-hint">click to expand ▾</span><span class="expand-hint close-hint">click to collapse ▴</span></h3>
+        <span class="post-tag">meta / welcome</span>
+        <p class="post-preview">Welcome to my corner of the internet. This is where I'll be writing up what I'm actually working on — SOC and blue team practice, pentesting, GRC, and whatever I pick up along the way in CTFs.</p>
+      </summary>
 
+      <div class="post-body">
       <h4>What to Expect</h4>
       <ul class="post-list">
         <li><strong>SOC &amp; Blue Team Writeups</strong> — Walkthroughs from TryHackMe rooms and PicoCTF challenges as I work through them</li>
@@ -649,7 +713,8 @@ tail -f /var/log/auth.log | grep -i "failed\|invalid"</code></pre>
 
       <h4>Stay Tuned</h4>
       <p>More writeups coming as I finish them. In the meantime, feel free to check out my <a href="#" data-goto="projects">projects</a> or <a href="#" data-goto="contact">get in touch</a>.</p>
-    </div>
+      </div>
+    </details>
   </section>
 
   <!-- ============ CONTACT ============ -->
@@ -685,7 +750,7 @@ tail -f /var/log/auth.log | grep -i "failed\|invalid"</code></pre>
 
 </main>
 
-<footer>echo "© 2026 Sreenidhi Ramani. Compiled with GCC and too much coffee."</footer>
+<footer><span class="status-dot"></span>echo "© 2026 Sreenidhi Ramani. Compiled with GCC and too much coffee."</footer>
 
 <script>
   // ---------- NAV ROUTING ----------
