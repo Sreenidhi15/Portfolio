@@ -1,6 +1,6 @@
 # Sreenidhi Ramani — Portfolio
 
-Personal portfolio site, live at **[sreenidhi15.github.io](https://sreenidhi15.github.io)**.
+Personal portfolio site, live at **[sreenidhi15.github.io](https://sreenidhi15.github.io/Portfolio/)**.
 
 A single-page site covering my background in firmware security, SOC/blue team work, GRC, and offensive security — built as one self-contained `index.html` with no build step or dependencies.
 
