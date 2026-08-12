@@ -613,38 +613,33 @@
       </div>
       <h3>Welcome to My Blog</h3>
       <span class="post-tag">meta / welcome</span>
-      <p>Welcome to my corner of the internet. This is where I'll be writing up what I'm actually doing in the lab and in CTFs — firmware fuzzing notes, SOC and blue team practice, and whatever breaks (or doesn't) along the way.</p>
+      <p>Welcome to my corner of the internet. This is where I'll be writing up what I'm actually working on — SOC and blue team practice, pentesting, GRC, and whatever I pick up along the way in CTFs.</p>
 
       <h4>What to Expect</h4>
       <ul class="post-list">
-        <li><strong>Firmware &amp; Embedded Notes</strong> — Fuzzing harnesses, QEMU emulation quirks, and what a real reproducible crash looks like on ARM Cortex-M targets</li>
         <li><strong>SOC &amp; Blue Team Writeups</strong> — Walkthroughs from TryHackMe rooms and PicoCTF challenges as I work through them</li>
-        <li><strong>Security Research</strong> — Vulnerability analysis and detection engineering notes from CactiLab and independent projects</li>
+        <li><strong>Pentesting &amp; Offensive Security</strong> — Notes from web app and network engagements, tooling, and methodology</li>
+        <li><strong>GRC &amp; Risk</strong> — Working through frameworks like NIST CSF and SOC 2, and what actually applying them looks like</li>
         <li><strong>Career &amp; Learning</strong> — What's actually helping (or not) in my M.S. ECE journey and CompTIA Security+ prep</li>
       </ul>
 
       <h4>Why a Blog?</h4>
-      <p>I fuzz firmware for a living, but writing about it is a different muscle. Explaining a crash well enough for someone else to reproduce it forces me to actually understand it — and firmware security still doesn't have enough plain-language writing out there. I'd rather add to that than not.</p>
+      <p>Writing about a topic forces me to actually understand it — it's easy to follow a checklist and call it done, harder to explain the "why" behind it clearly enough for someone else to follow. I'd rather build that habit in public than not.</p>
 
-      <h4>Sample: Quick GDB + QEMU Reference for Firmware Debugging</h4>
-      <p>A few commands I reach for constantly when triaging a fuzzer crash on an emulated Cortex-M target:</p>
-      <pre class="codeblock"><code># Attach GDB to a QEMU gdbserver session
-gdb-multiarch ./firmware.elf
-(gdb) target remote localhost:1234
+      <h4>Sample: Quick Recon &amp; Triage Cheat Sheet</h4>
+      <p>A few commands I reach for constantly during the recon and initial-triage phase of an engagement or lab:</p>
+      <pre class="codeblock"><code># Quick host discovery across a subnet
+nmap -sn 192.168.1.0/24
 
-# Set a breakpoint at the crash handler and continue
-(gdb) break HardFault_Handler
-(gdb) continue
+# Full port scan with service and script detection
+nmap -sV -sC -p- -oN full_scan.txt target.com
 
-# Inspect the fault status register after a crash
-(gdb) print/x *(uint32_t*)0xE000ED28
+# Pull recent failed logon events for triage (Windows)
+Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4625} -MaxEvents 50
 
-# Walk the stack to find the return address that faulted
-(gdb) bt full
-
-# Dump memory around the faulting address
-(gdb) x/16xw $sp</code></pre>
-      <p class="post-tip">Tip: always confirm you're working against an isolated emulation target, never a live device, before you start throwing malformed input at anything.</p>
+# Quick tail of auth logs on a Linux host
+tail -f /var/log/auth.log | grep -i "failed\|invalid"</code></pre>
+      <p class="post-tip">Tip: always get proper authorization before scanning or testing any network or system that isn't yours.</p>
 
       <h4>Stay Tuned</h4>
       <p>More writeups coming as I finish them. In the meantime, feel free to check out my <a href="#" data-goto="projects">projects</a> or <a href="#" data-goto="contact">get in touch</a>.</p>
