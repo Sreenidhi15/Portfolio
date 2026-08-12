@@ -320,9 +320,9 @@
     </div>
 
     <div class="stat-grid">
-      <div class="stat"><span class="n">23+</span><span class="l">firmware vulnerabilities found on NeurAlert (ARM Cortex-M)</span></div>
-      <div class="stat"><span class="n">130+</span><span class="l">findings across the CactiLab embedded firmware dataset</span></div>
-      <div class="stat"><span class="n">3</span><span class="l">Cortex-M / IoT / offensive-security portfolio projects</span></div>
+      <div class="stat"><span class="n">8+</span><span class="l">portfolio projects across offensive security, SOC, GRC, and embedded systems</span></div>
+      <div class="stat"><span class="n">2</span><span class="l">published research papers — IJRASET 2022 &amp; IJERT/ICSCSET 2025</span></div>
+      <div class="stat"><span class="n">20+</span><span class="l">vulnerabilities identified across pentest engagements</span></div>
       <div class="stat"><span class="n">EE+Sec</span><span class="l">circuits-to-code background — hardware and security in one head</span></div>
     </div>
   </section>
@@ -703,13 +703,13 @@ tail -f /var/log/auth.log | grep -i "failed\|invalid"</code></pre>
 
   // ---------- BOOT CONSOLE ----------
   const bootLines = [
-    ["[  0.000000] ", "sreenidhi-os booting on Cortex-M4 emulation target..."],
-    ["[  0.041223] ", "mounting /dev/firmware ...", "ok"],
-    ["[  0.118900] ", "loading module: libfuzzer_harness.ko ...", "ok"],
-    ["[  0.220441] ", "loading module: boofuzz_pipeline.ko ...", "ok"],
-    ["[  0.402117] ", "attaching to QEMU emulated NeurAlert target ...", "warn"],
-    ["[  0.512300] ", "CactiLab research assistant: ONLINE", "ok"],
-    ["[  0.600011] ", "23+ vulnerabilities logged this session"],
+    ["[  0.000000] ", "sreenidhi-os booting security workstation..."],
+    ["[  0.041223] ", "mounting /var/log/siem ...", "ok"],
+    ["[  0.118900] ", "loading module: threat_intel_feed.ko ...", "ok"],
+    ["[  0.220441] ", "loading module: grc_control_mapper.ko ...", "ok"],
+    ["[  0.402117] ", "connecting to CTF lab environment ...", "warn"],
+    ["[  0.512300] ", "security analyst: ONLINE", "ok"],
+    ["[  0.600011] ", "20+ vulnerabilities logged across engagements"],
   ];
   const consoleEl = document.getElementById('bootConsole');
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
