@@ -3,578 +3,816 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>_</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<title>Sreenidhi Ramani — Firmware &amp; Security Research</title>
+<meta name="description" content="Sreenidhi Ramani — Firmware security researcher and M.S. ECE student at Northeastern University. SOC, GRC, embedded systems security.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --red: #ff0033;
-    --red-dim: #cc0022;
-    --red-glow: rgba(255,0,51,0.45);
-    --red-faint: rgba(255,0,51,0.08);
-    --darker: #040000;
-    --surface: #100000;
-    --surface2: #180000;
-    --text: #ff6666;
-    --text-dim: #883333;
-    --text-faint: #3a0f0f;
-    --white: #ffe8e8;
-    --green: #00ff88;
-    --green-glow: rgba(0,255,136,0.4);
-    --yellow: #ffcc00;
+  :root{
+    --bg: #0a0e0e;
+    --bg-raised: #101615;
+    --bg-inset: #0d1312;
+    --fg: #cfe0da;
+    --fg-dim: #8fa39c;
+    --muted: #5c6d68;
+    --accent: #ffb000;      /* phosphor amber */
+    --accent-soft: #ffb00022;
+    --accent-2: #57d9c7;    /* muted signal cyan */
+    --accent-2-soft: #57d9c722;
+    --danger: #ff6b6b;
+    --border: #1c2624;
+    --border-bright: #2c3a37;
+    --radius: 3px;
+    --mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
   }
 
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html { scroll-behavior:smooth; }
-  body { background:var(--darker); color:var(--text); font-family:'Share Tech Mono',monospace; min-height:100vh; overflow-x:hidden; }
-
-  /* scanlines */
-  body::before { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.13) 2px,rgba(0,0,0,0.13) 4px); pointer-events:none; z-index:9999; }
-
-  @keyframes flicker { 0%,100%{opacity:1} 91%{opacity:1} 92%{opacity:.88} 93%{opacity:1} 95%{opacity:.93} 96%{opacity:1} }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-  @keyframes glow-pulse { 0%,100%{ text-shadow:0 0 14px rgba(255,204,0,.5),0 0 30px rgba(255,204,0,.2); } 50%{ text-shadow:0 0 28px rgba(255,204,0,.8),0 0 60px rgba(255,204,0,.3); } }
-  @keyframes slide-up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)} 40%{transform:translateX(9px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
-  @keyframes fade-scale { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
-  @keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-  body { animation:flicker 8s infinite; }
-
-  /* ===== BOOT ===== */
-  #boot-screen {
-    position:fixed; inset:0; background:var(--darker);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    z-index:200; transition:opacity .5s ease;
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--fg);
+    font-family:var(--mono);
+    font-size:15px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
   }
-  #boot-screen.fade-out { opacity:0; pointer-events:none; }
-  .boot-text { font-size:12px; line-height:2.2; width:min(520px,88vw); }
-  .b-red { color:var(--red); }
-  .b-green { color:var(--green); }
-  .b-dim { color:var(--text-faint); }
-  .boot-line { display:block; animation:slide-up .2s ease both; }
-
-  /* ===== CTF SCREEN — MINIMAL ===== */
-  #ctf-screen {
-    position:fixed; inset:0; background:var(--darker);
-    display:none; flex-direction:column;
-    align-items:center; justify-content:center;
-    z-index:100; transition:opacity .8s ease, transform .8s ease;
-  }
-  #ctf-screen.active { display:flex; }
-  #ctf-screen.cracked { opacity:0; transform:scale(1.03); pointer-events:none; }
-
-  .ctf-wrap {
-    display:flex; flex-direction:column; align-items:center;
-    gap:0; width:min(480px,90vw);
-    animation:fade-scale .6s ease both;
-  }
-
-  /* just the cipher — big, centered, nothing else */
-  .cipher-label {
-    font-size:10px; letter-spacing:5px; color:var(--text-faint);
-    margin-bottom:20px; text-align:center;
-  }
-
-  .cipher-text {
-    font-size:clamp(32px,8vw,56px);
-    font-family:'Share Tech Mono', monospace;
-    font-weight:bold;
-    color:var(--yellow);
-    letter-spacing:8px;
-    text-align:center;
-    user-select:all;
-    animation:glow-pulse 2.5s ease infinite;
-    margin-bottom:48px;
-  }
-
-  /* single input line */
-  .input-row {
-    display:flex; width:100%; gap:0;
-    border:1px solid var(--text-faint);
-    box-shadow:0 0 30px rgba(255,0,51,.12);
-  }
-
-  .prompt-sym {
-    background:var(--surface);
-    border-right:1px solid var(--text-faint);
-    color:var(--red);
-    font-size:16px;
-    padding:14px 16px;
-    display:flex; align-items:center;
-    user-select:none;
-  }
-
-  .ctf-input {
-    flex:1;
-    background:var(--darker);
-    border:none;
-    outline:none;
-    color:var(--white);
-    font-family:'Share Tech Mono',monospace;
-    font-size:16px;
-    padding:14px 16px;
-    letter-spacing:2px;
-    transition:box-shadow .2s;
-    caret-color:var(--red);
-  }
-  .ctf-input::placeholder { color:var(--text-faint); letter-spacing:2px; }
-  .ctf-input:focus { box-shadow:0 0 0 1px var(--red) inset; }
-  .ctf-input.shake { animation:shake .4s ease; }
-  .ctf-input.success { box-shadow:0 0 0 1px var(--green) inset; color:var(--green); }
-
-  .enter-key {
-    background:var(--red);
-    color:var(--darker);
-    border:none; cursor:pointer;
-    font-family:'Share Tech Mono',monospace;
-    font-size:12px; font-weight:bold;
-    letter-spacing:2px; padding:14px 18px;
-    transition:all .2s; white-space:nowrap;
-  }
-  .enter-key:hover { background:var(--white); }
-  .enter-key:active { transform:scale(.97); }
-
-  /* minimal feedback — just one line under the input */
-  .feedback-line {
-    margin-top:16px; min-height:18px;
-    font-size:11px; letter-spacing:3px;
-    text-align:center; width:100%;
-    color:transparent;
-    transition:color .2s;
-  }
-  .feedback-line.denied { color:var(--red); animation:slide-up .25s ease; }
-  .feedback-line.granted { color:var(--green); animation:slide-up .25s ease; }
-
-  /* hint — only appears after 3 wrong, very subtle */
-  .hint-line {
-    margin-top:32px; font-size:11px; letter-spacing:2px;
-    color:transparent; text-align:center;
-    transition:color .4s ease;
-    line-height:1.9;
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px);
     pointer-events:none;
+    z-index:999;
+    mix-blend-mode:overlay;
   }
-  .hint-line.visible { color:rgba(255,204,0,0.55); pointer-events:all; }
-  .hint-link { color:transparent; text-decoration:none; border-bottom:1px dashed transparent; transition:color .2s; }
-  .hint-line.visible .hint-link { color:rgba(255,255,220,0.6); border-bottom:1px dashed rgba(255,204,0,.4); }
-  .hint-line.visible .hint-link:hover { color:var(--yellow); }
+  a{ color:var(--accent-2); text-decoration:none; }
+  a:hover{ text-decoration:underline; }
+  ::selection{ background:var(--accent-soft); color:var(--accent); }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
-  /* attempt dots — tiny, bottom right */
-  .attempt-dots {
-    position:fixed; bottom:24px; right:28px;
-    display:flex; gap:6px; align-items:center;
+  .wrap{ max-width:900px; margin:0 auto; padding:0 24px; }
+
+  /* ---------- NAV ---------- */
+  header.topbar{
+    position:sticky; top:0; z-index:100;
+    background:rgba(10,14,14,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border);
   }
-  .dot { width:6px; height:6px; border-radius:50%; background:var(--text-faint); transition:background .3s; }
-  .dot.wrong { background:var(--red); box-shadow:0 0 6px var(--red); }
+  .topbar-inner{
+    max-width:900px; margin:0 auto; padding:14px 24px;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px; flex-wrap:wrap;
+  }
+  .prompt-logo{
+    color:var(--fg-dim); font-size:13px; letter-spacing:0.02em; white-space:nowrap;
+  }
+  .prompt-logo b{ color:var(--accent-2); font-weight:600; }
+  .prompt-logo .path{ color:var(--fg-dim); }
+  .prompt-logo .caret{ color:var(--accent); animation:blink 1.1s steps(1) infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
 
-  /* ===== PORTFOLIO ===== */
-  #portfolio { display:none; opacity:0; transition:opacity 1s ease; }
-  #portfolio.visible { display:block; opacity:1; }
+  nav.tabs{ display:flex; gap:2px; flex-wrap:wrap; }
+  nav.tabs button{
+    background:none; border:1px solid transparent; color:var(--fg-dim);
+    font-family:var(--mono); font-size:13px; padding:6px 12px; border-radius:var(--radius);
+    cursor:pointer; transition:color .15s, border-color .15s, background .15s;
+  }
+  nav.tabs button:hover{ color:var(--fg); }
+  nav.tabs button.active{
+    color:var(--accent); border-color:var(--border-bright); background:var(--bg-raised);
+  }
+  nav.tabs button .num{ color:var(--muted); margin-right:6px; }
+  nav.tabs button.active .num{ color:var(--accent); }
 
-  nav { position:fixed; top:0; left:0; right:0; height:56px; background:rgba(4,0,0,.96); border-bottom:1px solid var(--text-faint); display:flex; align-items:center; justify-content:space-between; padding:0 40px; z-index:50; backdrop-filter:blur(10px); }
-  .nav-logo { font-family:'Orbitron',monospace; font-size:14px; font-weight:900; color:var(--red); letter-spacing:4px; text-shadow:0 0 15px var(--red-glow); }
-  .nav-links { display:flex; gap:30px; }
-  .nav-links a { color:var(--text-dim); text-decoration:none; font-size:11px; letter-spacing:3px; transition:color .2s; }
-  .nav-links a:hover { color:var(--red); }
-  .nav-badge { font-size:10px; letter-spacing:2px; color:var(--green); display:flex; align-items:center; gap:8px; }
-  .nav-badge::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:blink 1.5s infinite; }
+  main{ min-height:70vh; }
+  section.page{ display:none; padding:56px 0 80px; }
+  section.page.active{ display:block; animation:fadein .35s ease; }
+  @keyframes fadein{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
 
-  .hero { min-height:100vh; display:flex; align-items:center; padding:100px 40px 60px; position:relative; overflow:hidden; }
-  .hero-bg { position:absolute; inset:0; background:radial-gradient(ellipse 65% 55% at 72% 50%,rgba(255,0,51,.07) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 15% 85%,rgba(255,0,51,.04) 0%,transparent 60%); }
-  .hero-grid { position:absolute; inset:0; background-image:linear-gradient(var(--text-faint) 1px,transparent 1px),linear-gradient(90deg,var(--text-faint) 1px,transparent 1px); background-size:50px 50px; opacity:.25; mask-image:radial-gradient(ellipse 80% 80% at center,black,transparent); }
-  .hero-content { position:relative; max-width:1100px; margin:0 auto; width:100%; }
+  .eyebrow{
+    color:var(--accent); font-size:12px; letter-spacing:0.12em; text-transform:uppercase;
+    margin:0 0 10px; display:flex; align-items:center; gap:8px;
+  }
+  .eyebrow::before{ content:"//"; color:var(--muted); }
 
-  .hero-tag { font-size:10px; letter-spacing:5px; color:var(--red); margin-bottom:14px; display:flex; align-items:center; gap:12px; }
-  .hero-tag::before { content:''; flex:0 0 30px; height:1px; background:var(--red); }
-  .hero-name { font-family:'Orbitron',monospace; font-size:clamp(36px,6vw,74px); font-weight:900; color:var(--white); line-height:1; letter-spacing:2px; margin-bottom:12px; }
-  .hero-name span { color:var(--red); text-shadow:0 0 30px var(--red-glow); }
-  .hero-role { font-family:'Rajdhani',sans-serif; font-size:clamp(13px,2.2vw,20px); font-weight:300; color:var(--text-dim); letter-spacing:6px; margin-bottom:30px; }
-  .hero-desc { font-family:'Rajdhani',sans-serif; font-size:15px; color:var(--text-dim); max-width:500px; line-height:1.85; margin-bottom:38px; border-left:2px solid var(--text-faint); padding-left:18px; }
-  .hero-btns { display:flex; gap:14px; flex-wrap:wrap; }
-  .btn-p { background:var(--red); color:var(--darker); font-family:'Orbitron',monospace; font-size:11px; font-weight:700; letter-spacing:3px; padding:14px 26px; border:none; cursor:pointer; text-decoration:none; display:inline-block; transition:all .2s; }
-  .btn-p:hover { background:var(--white); box-shadow:0 0 28px var(--red-glow); transform:translateY(-2px); }
-  .btn-s { background:transparent; color:var(--red); font-family:'Orbitron',monospace; font-size:11px; font-weight:700; letter-spacing:3px; padding:13px 26px; border:1px solid var(--red); cursor:pointer; text-decoration:none; display:inline-block; transition:all .2s; }
-  .btn-s:hover { background:var(--red-faint); box-shadow:0 0 20px var(--red-glow); transform:translateY(-2px); }
+  h1{ font-size:clamp(28px,5vw,42px); line-height:1.15; margin:0 0 14px; color:#fff; font-weight:700; }
+  h2{ font-size:22px; color:#fff; margin:0 0 4px; font-weight:600; }
+  h3{ font-size:16px; color:var(--fg); margin:0; font-weight:600; }
+  p{ color:var(--fg-dim); margin:0 0 14px; }
+  .lede{ font-size:17px; color:var(--fg); max-width:640px; }
 
-  .hero-term { position:absolute; right:0; top:50%; transform:translateY(-50%); width:min(370px,38vw); background:var(--surface); border:1px solid var(--text-faint); border-top:3px solid var(--red); display:none; }
-  @media(min-width:920px){ .hero-term{display:block;} }
-  .t-bar { background:var(--surface2); padding:8px 14px; font-size:10px; letter-spacing:2px; color:var(--text-dim); border-bottom:1px solid var(--text-faint); display:flex; align-items:center; gap:8px; }
-  .td { width:8px; height:8px; border-radius:50%; }
-  .t-body { padding:16px; font-size:12px; line-height:1.95; }
-  .t-p { color:var(--red); } .t-c { color:var(--white); } .t-o { color:var(--text-dim); } .t-v { color:var(--green); }
-  .t-cur { display:inline-block; width:8px; height:14px; background:var(--red); animation:blink 1s infinite; vertical-align:middle; margin-left:2px; }
+  code, .mono{ font-family:var(--mono); }
+  .accent{ color:var(--accent); }
+  .accent2{ color:var(--accent-2); }
 
-  section { padding:88px 40px; }
-  .container { max-width:1100px; margin:0 auto; }
-  .sec-header { display:flex; align-items:center; gap:18px; margin-bottom:52px; }
-  .sec-num { font-family:'Orbitron',monospace; font-size:11px; color:var(--red); letter-spacing:3px; opacity:.7; }
-  .sec-title { font-family:'Orbitron',monospace; font-size:20px; font-weight:900; color:var(--white); letter-spacing:4px; }
-  .sec-line { flex:1; height:1px; background:linear-gradient(90deg,var(--text-faint),transparent); }
+  /* ---------- HERO / HOME ---------- */
+  .hero-tag{ color:var(--fg-dim); font-size:13px; margin-bottom:18px; }
+  .console{
+    background:var(--bg-inset);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    font-size:12.5px;
+    color:var(--fg-dim);
+    white-space:pre-wrap;
+    min-height:150px;
+    margin-bottom:28px;
+    position:relative;
+    overflow:hidden;
+  }
+  .console::before{
+    content:"boot.log";
+    position:absolute; top:0; right:0;
+    font-size:10px; color:var(--muted);
+    background:var(--bg-raised); padding:3px 8px; border-bottom-left-radius:var(--radius);
+    border-left:1px solid var(--border); border-bottom:1px solid var(--border);
+  }
+  .console .ok{ color:var(--accent-2); }
+  .console .warn{ color:var(--accent); }
+  .console .cursor-line{ color:var(--fg); }
+  .console .cursor{ display:inline-block; width:7px; height:13px; background:var(--accent); vertical-align:-2px; animation:blink 1s steps(1) infinite; }
 
-  #skills { background:var(--surface); }
-  .skills-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(255px,1fr)); gap:18px; }
-  .sk-card { background:var(--darker); border:1px solid var(--text-faint); border-top:2px solid var(--red); padding:22px; transition:transform .2s,box-shadow .2s; }
-  .sk-card:hover { transform:translateY(-4px); box-shadow:0 8px 28px rgba(255,0,51,.13); }
-  .sk-cat { font-family:'Orbitron',monospace; font-size:9px; letter-spacing:3px; color:var(--red); margin-bottom:14px; }
-  .sk-tags { display:flex; flex-wrap:wrap; gap:7px; }
-  .sk-tag { background:var(--red-faint); border:1px solid var(--text-faint); color:var(--text); font-size:11px; letter-spacing:1px; padding:5px 10px; transition:all .2s; }
-  .sk-tag:hover { border-color:var(--red); background:rgba(255,0,51,.14); color:var(--white); }
+  .cta-row{ display:flex; gap:10px; flex-wrap:wrap; margin:24px 0 28px; }
+  .btn{
+    font-family:var(--mono); font-size:13px; padding:9px 16px;
+    border:1px solid var(--border-bright); border-radius:var(--radius);
+    color:var(--fg); background:var(--bg-raised); cursor:pointer; transition:all .15s;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn:hover{ border-color:var(--accent); color:var(--accent); text-decoration:none; }
+  .btn.primary{ border-color:var(--accent); color:var(--accent); }
+  .btn.primary:hover{ background:var(--accent-soft); }
 
-  .exp-list { display:flex; flex-direction:column; gap:24px; }
-  .exp-card { background:var(--surface); border:1px solid var(--text-faint); border-left:3px solid var(--red); padding:26px 30px; transition:box-shadow .2s; }
-  .exp-card:hover { box-shadow:0 0 28px rgba(255,0,51,.1); }
-  .exp-top { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:5px; }
-  .exp-title { font-family:'Rajdhani',sans-serif; font-size:19px; font-weight:700; color:var(--white); letter-spacing:2px; }
-  .exp-date { font-size:10px; letter-spacing:3px; color:var(--red); background:var(--red-faint); border:1px solid var(--text-faint); padding:4px 12px; white-space:nowrap; }
-  .exp-co { font-family:'Orbitron',monospace; font-size:10px; color:var(--red); letter-spacing:3px; margin-bottom:14px; }
-  .exp-ul { list-style:none; }
-  .exp-ul li { font-family:'Rajdhani',sans-serif; font-size:14px; color:var(--text-dim); padding:4px 0 4px 20px; position:relative; line-height:1.65; }
-  .exp-ul li::before { content:'>'; position:absolute; left:0; color:var(--red); }
+  .social-row{ display:flex; gap:18px; flex-wrap:wrap; margin-bottom:8px; }
+  .social-row a{ font-size:13px; color:var(--fg-dim); }
+  .social-row a:hover{ color:var(--accent-2); }
 
-  .edu-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; }
-  .edu-card { background:var(--surface); border:1px solid var(--text-faint); border-left:3px solid var(--red); padding:24px 28px; }
-  .edu-degree { font-family:'Rajdhani',sans-serif; font-size:17px; font-weight:700; color:var(--white); margin-bottom:4px; }
-  .edu-school { font-family:'Orbitron',monospace; font-size:10px; color:var(--red); letter-spacing:3px; margin-bottom:10px; }
-  .edu-meta { font-size:11px; color:var(--text-dim); line-height:1.8; }
-  .edu-meta span { color:var(--green); }
+  .stat-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:1px; background:var(--border); border:1px solid var(--border); margin-top:44px; border-radius:var(--radius); overflow:hidden;
+  }
+  .stat{ background:var(--bg-inset); padding:20px; }
+  .stat .n{ color:var(--accent); font-size:22px; font-weight:700; display:block; margin-bottom:4px; }
+  .stat .l{ color:var(--fg-dim); font-size:12.5px; }
 
-  #projects { background:var(--surface); }
-  .proj-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:22px; }
-  .proj-card { background:var(--darker); border:1px solid var(--text-faint); padding:26px; position:relative; overflow:hidden; transition:transform .2s,box-shadow .2s; }
-  .proj-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--red),transparent); }
-  .proj-card:hover { transform:translateY(-4px); box-shadow:0 12px 36px rgba(255,0,51,.13); }
-  .proj-id { font-size:9px; letter-spacing:4px; color:var(--text-faint); margin-bottom:10px; }
-  .proj-name { font-family:'Orbitron',monospace; font-size:12px; font-weight:700; color:var(--white); letter-spacing:2px; margin-bottom:10px; line-height:1.4; }
-  .proj-desc { font-family:'Rajdhani',sans-serif; font-size:14px; color:var(--text-dim); line-height:1.75; margin-bottom:16px; }
-  .proj-stack { display:flex; flex-wrap:wrap; gap:6px; }
-  .proj-tag { font-size:10px; letter-spacing:2px; color:var(--red); border:1px solid var(--text-faint); padding:3px 8px; }
-  .proj-pub { font-size:10px; letter-spacing:1px; color:var(--green); margin-top:10px; }
+  /* ---------- ABOUT ---------- */
+  .section-block{ margin-bottom:42px; }
+  .section-block h2{ margin-bottom:18px; }
+  .bio-grid{ display:grid; grid-template-columns:1fr; gap:8px; }
+  .job{ border-left:2px solid var(--border); padding-left:18px; margin-bottom:26px; position:relative; }
+  .job::before{
+    content:""; position:absolute; left:-5px; top:4px; width:8px; height:8px; border-radius:50%;
+    background:var(--bg); border:2px solid var(--accent-2);
+  }
+  .job-head{ display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:baseline; margin-bottom:4px; }
+  .job-role{ color:#fff; font-weight:600; font-size:15px; }
+  .job-org{ color:var(--accent-2); font-size:13.5px; }
+  .job-date{ color:var(--muted); font-size:12px; white-space:nowrap; }
+  .job ul{ margin:8px 0 0; padding-left:18px; color:var(--fg-dim); font-size:13.5px; }
+  .job li{ margin-bottom:5px; }
 
-  .ctf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:16px; }
-  .ctf-c { background:var(--surface); border:1px solid var(--text-faint); padding:22px; text-align:center; transition:all .2s; }
-  .ctf-c:hover { border-color:var(--red); box-shadow:0 0 18px rgba(255,0,51,.1); }
-  .ctf-icon { font-size:26px; margin-bottom:10px; }
-  .ctf-name { font-family:'Orbitron',monospace; font-size:10px; letter-spacing:2px; color:var(--white); margin-bottom:8px; }
-  .ctf-det { font-size:11px; letter-spacing:1px; color:var(--text-dim); line-height:1.65; }
+  .skill-cat{ margin-bottom:16px; }
+  .skill-cat .cat-label{ color:var(--fg); font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; display:block; }
+  .pill-row{ display:flex; flex-wrap:wrap; gap:7px; }
+  .pill{
+    font-size:12px; padding:4px 10px; border:1px solid var(--border-bright); border-radius:20px;
+    color:var(--fg-dim); background:var(--bg-inset);
+  }
 
-  #contact { text-align:center; }
-  .con-inner { max-width:580px; margin:0 auto; }
-  .con-tag { font-family:'Orbitron',monospace; font-size:12px; letter-spacing:4px; color:var(--text-dim); margin-bottom:14px; }
-  .con-email { font-family:'Orbitron',monospace; font-size:clamp(14px,2.5vw,22px); font-weight:900; color:var(--red); text-shadow:0 0 18px var(--red-glow); margin-bottom:34px; word-break:break-all; }
-  .con-links { display:flex; justify-content:center; gap:16px; flex-wrap:wrap; }
-  .con-link { color:var(--text-dim); text-decoration:none; font-size:11px; letter-spacing:3px; border:1px solid var(--text-faint); padding:12px 22px; transition:all .2s; display:flex; align-items:center; gap:8px; }
-  .con-link:hover { color:var(--red); border-color:var(--red); box-shadow:0 0 14px rgba(255,0,51,.2); }
+  .edu-item{ margin-bottom:16px; }
+  .edu-item .deg{ color:#fff; font-weight:600; font-size:14.5px; }
+  .edu-item .school{ color:var(--accent-2); font-size:13px; }
+  .edu-item .when{ color:var(--muted); font-size:12px; }
+  .edu-item .detail{ color:var(--fg-dim); font-size:13px; margin-top:4px; }
 
-  footer { background:var(--surface); border-top:1px solid var(--text-faint); padding:22px 40px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; font-size:10px; letter-spacing:2px; color:var(--text-faint); }
+  .offduty{ font-size:13.5px; color:var(--fg-dim); border-top:1px dashed var(--border); padding-top:18px; margin-top:8px; }
 
-  .fi { opacity:0; transform:translateY(18px); transition:opacity .6s ease,transform .6s ease; }
-  .fi.vis { opacity:1; transform:translateY(0); }
+  /* ---------- PROJECTS ---------- */
+  .filter-row{ display:flex; gap:8px; flex-wrap:wrap; margin:20px 0 30px; }
+  .filter-row button{
+    font-family:var(--mono); font-size:12px; padding:6px 13px; border-radius:20px;
+    border:1px solid var(--border-bright); background:none; color:var(--fg-dim); cursor:pointer; transition:all .15s;
+  }
+  .filter-row button:hover{ color:var(--fg); }
+  .filter-row button.on{ color:var(--bg); background:var(--accent); border-color:var(--accent); }
 
-  ::-webkit-scrollbar { width:4px; }
-  ::-webkit-scrollbar-track { background:var(--darker); }
-  ::-webkit-scrollbar-thumb { background:var(--red-dim); }
+  .proj-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .card{
+    background:var(--bg-inset); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px; display:flex; flex-direction:column; transition:border-color .15s, transform .15s;
+  }
+  .card:hover{ border-color:var(--border-bright); transform:translateY(-2px); }
+  .card .tag{ color:var(--accent); font-size:11px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
+  .card h3{ margin-bottom:4px; font-size:15px; }
+  .card .date{ color:var(--muted); font-size:11.5px; margin-bottom:10px; display:block; }
+  .card p{ font-size:13px; color:var(--fg-dim); margin-bottom:12px; flex:1; }
+  .card .stack{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .card .stack span{ font-size:10.5px; color:var(--fg-dim); background:var(--bg-raised); padding:2px 7px; border-radius:3px; border:1px solid var(--border); }
+  .card .link{ font-size:12.5px; color:var(--accent-2); }
+  .card.pub{ border-color:var(--accent-2); }
+  .card.pub .tag{ color:var(--accent-2); }
+  .repo-stats{
+    display:flex; gap:14px; font-size:11.5px; color:var(--muted); margin-bottom:10px; min-height:15px;
+  }
+  .repo-stats span{ display:inline-flex; align-items:center; gap:4px; }
+  .repo-stats .star{ color:var(--accent); }
+
+  /* ---------- BLOG ---------- */
+  .post{
+    border:1px solid var(--border); background:var(--bg-inset); border-radius:var(--radius);
+    padding:20px; margin-bottom:16px;
+  }
+  .post-head{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
+  .post .status{
+    font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--accent);
+    border:1px solid var(--accent); border-radius:20px; padding:2px 9px;
+  }
+  .post .status.idea{ color:var(--muted); border-color:var(--border-bright); }
+  .post .status.published{ color:var(--accent-2); border-color:var(--accent-2); }
+  .post-date{ color:var(--muted); font-size:12px; }
+  .post h3{ font-size:16px; margin:6px 0 8px; }
+  .post p{ font-size:13.5px; margin-bottom:0; }
+  .blog-empty-note{ font-size:12.5px; color:var(--muted); margin-top:24px; border-top:1px dashed var(--border); padding-top:16px; }
+  .post-full{ padding:26px 24px; }
+  .post-full h4{ color:#fff; font-size:14px; margin:22px 0 8px; }
+  .post-tag{ display:inline-block; font-size:11px; color:var(--accent); background:var(--accent-soft); border-radius:20px; padding:2px 10px; margin-bottom:14px; }
+  .post-list{ margin:0 0 4px; padding-left:18px; color:var(--fg-dim); font-size:13.5px; }
+  .post-list li{ margin-bottom:8px; }
+  .codeblock{
+    background:var(--bg-inset); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px 16px; font-size:12.5px; color:var(--fg); overflow-x:auto; margin:10px 0 14px;
+    line-height:1.6;
+  }
+  .codeblock code{ color:var(--accent-2); }
+  .post-tip{
+    font-size:12.5px; color:var(--accent); background:var(--accent-soft); border-left:2px solid var(--accent);
+    padding:8px 12px; margin:4px 0 14px;
+  }
+
+  /* ---------- CONTACT ---------- */
+  .contact-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:24px; }
+  .contact-card{
+    border:1px solid var(--border); background:var(--bg-inset); border-radius:var(--radius);
+    padding:18px; display:flex; flex-direction:column; gap:6px;
+  }
+  .contact-card .k{ color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
+  .contact-card .v{ color:var(--fg); font-size:14px; }
+  .contact-card .v a{ color:var(--accent-2); }
+  .copy-btn{
+    align-self:flex-start; margin-top:4px; font-size:11px; color:var(--fg-dim);
+    background:var(--bg-raised); border:1px solid var(--border-bright); border-radius:3px; padding:3px 9px; cursor:pointer;
+  }
+  .copy-btn:hover{ color:var(--accent); border-color:var(--accent); }
+
+  footer{
+    border-top:1px solid var(--border); padding:24px 0; text-align:center;
+    color:var(--muted); font-size:12px;
+  }
+
+  @media (max-width:640px){
+    .topbar-inner{ flex-direction:column; align-items:flex-start; }
+    section.page{ padding:36px 0 60px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+  }
 </style>
 </head>
 <body>
 
-<!-- ===== BOOT ===== -->
-<div id="boot-screen">
-  <div class="boot-text" id="boot-text"></div>
-</div>
-
-<!-- ===== CTF — MINIMAL ===== -->
-<div id="ctf-screen">
-
-  <div class="ctf-wrap">
-    <div class="cipher-label">DECRYPT IT</div>
-    <div class="cipher-text" id="cipher-display">ebbg@fe</div>
-
-    <div class="input-row">
-      <div class="prompt-sym">$</div>
-      <input class="ctf-input" id="ctf-input" type="text" placeholder="_ _ _ _ _ _ _ _" autocomplete="off" spellcheck="false" maxlength="20" />
-      <button class="enter-key" id="submit-btn" onclick="checkAnswer()">ENTER</button>
-    </div>
-
-    <div class="feedback-line" id="feedback"></div>
-
-    <div class="hint-line" id="hint-line">
-      <a class="hint-link" href="https://www.dcode.fr/caesar-cipher" target="_blank" rel="noopener">dcode.fr/caesar-cipher</a>
-    </div>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="prompt-logo"><b>sreenidhi</b><span class="path">@northeastern:~$</span> <span class="caret">_</span></div>
+    <nav class="tabs" id="navTabs">
+      <button data-page="home" class="active"><span class="num">01</span>home</button>
+      <button data-page="about"><span class="num">02</span>about</button>
+      <button data-page="projects"><span class="num">03</span>projects</button>
+      <button data-page="blog"><span class="num">04</span>blog</button>
+      <button data-page="contact"><span class="num">05</span>contact</button>
+    </nav>
   </div>
+</header>
 
-  <!-- subtle wrong attempt dots -->
-  <div class="attempt-dots">
-    <div class="dot" id="d1"></div>
-    <div class="dot" id="d2"></div>
-    <div class="dot" id="d3"></div>
-  </div>
+<main class="wrap">
 
-</div>
+  <!-- ============ HOME ============ -->
+  <section class="page active" id="page-home">
+    <p class="eyebrow">M.S. Electrical &amp; Computer Engineering — Northeastern University</p>
+    <h1>Sreenidhi Ramani</h1>
+    <p class="lede">Cybersecurity Graduate Student | SOC &amp; Blue Team | GRC &amp; Pentesting | Threat Intelligence &amp; Security Engineering</p>
 
-<!-- ===== PORTFOLIO ===== -->
-<div id="portfolio">
+    <div class="console" id="bootConsole" aria-label="Simulated boot log"></div>
 
-  <nav>
-    <div class="nav-logo">SR3ENIDHI</div>
-    <div class="nav-links">
-      <a href="#skills">SKILLS</a>
-      <a href="#experience">XP</a>
-      <a href="#projects">PROJECTS</a>
-      <a href="#contact">CONTACT</a>
+    <div class="cta-row">
+      <button class="btn primary" data-goto="about">$ whoami →</button>
+      <button class="btn" data-goto="projects">$ ls projects/ →</button>
+      <button class="btn" data-goto="contact">$ ./contact →</button>
     </div>
-    <div class="nav-badge">ACCESS GRANTED</div>
-  </nav>
 
-  <section class="hero">
-    <div class="hero-bg"></div>
-    <div class="hero-grid"></div>
-    <div class="hero-content">
-      <div class="hero-tag fi">CYBERSECURITY ENGINEER // BOSTON, MA</div>
-      <div class="hero-name fi">SREENIDHI<br><span>RAMANI</span></div>
-      <div class="hero-role fi">PENETRATION TESTER &amp; SECURITY RESEARCHER</div>
-      <div class="hero-desc fi">
-        MS ECE @ Northeastern University — Computer Systems &amp; Software.<br>
-        Hands-on experience in offensive security, cloud hardening, incident response, and post-quantum cryptography research. Actively seeking cybersecurity co-ops.
-      </div>
-      <div class="hero-btns fi">
-        <a href="#projects" class="btn-p">VIEW PROJECTS</a>
-        <a href="#contact" class="btn-s">CONTACT ME</a>
-      </div>
-      <div class="hero-term">
-        <div class="t-bar">
-          <div class="td" style="background:#ff5f56"></div>
-          <div class="td" style="background:#ffbd2e"></div>
-          <div class="td" style="background:#27c93f"></div>
-          &nbsp;bash — sreenidhi@sec-box
+    <div class="social-row">
+      <a href="https://github.com/Sreenidhi15" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.linkedin.com/in/sreenidhiramani/" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://tryhackme.com/p/Ciph3r15" target="_blank" rel="noopener">TryHackMe</a>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat"><span class="n">23+</span><span class="l">firmware vulnerabilities found on NeurAlert (ARM Cortex-M)</span></div>
+      <div class="stat"><span class="n">130+</span><span class="l">findings across the CactiLab embedded firmware dataset</span></div>
+      <div class="stat"><span class="n">3</span><span class="l">Cortex-M / IoT / offensive-security portfolio projects</span></div>
+      <div class="stat"><span class="n">EE+Sec</span><span class="l">circuits-to-code background — hardware and security in one head</span></div>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section class="page" id="page-about">
+    <p class="eyebrow">about.txt</p>
+    <h1>whoami</h1>
+    <p class="lede">I study how embedded systems fail before an attacker finds out first. Most of my time right now goes into fuzzing firmware on a seizure-detection wristband — but the throughline across everything I do is the same question: <em>how does this actually break?</em></p>
+
+    <div class="section-block">
+      <p>I'm a Cybersecurity Graduate Student at Northeastern University conducting firmware security research and building automated vulnerability discovery tooling. Previously, I worked across offensive and defensive security in Mumbai, running penetration tests and supporting incident response for live security events.</p>
+      <p>Today, I focus on SOC and blue team work, penetration testing, and embedded security, alongside CTF competition with Northeastern's NUSec team. Full experience details below.</p>
+      <p class="eyebrow" style="margin-top:18px;">Currently seeking cybersecurity Full-time opportunities for 2026</p>
+    </div>
+
+    <div class="section-block">
+      <h2>// experience</h2>
+
+      <div class="job">
+        <div class="job-head">
+          <div><span class="job-role">Research Assistant, CactiLab</span><br><span class="job-org">Northeastern University</span></div>
+          <span class="job-date">May 2026 – Present</span>
         </div>
-        <div class="t-body">
-          <div><span class="t-p">root@sec-box:~$ </span><span class="t-c">whoami</span></div>
-          <div class="t-o">→ <span class="t-v">sreenidhi_ramani</span> // pentester</div>
-          <div style="margin-top:6px"><span class="t-p">root@sec-box:~$ </span><span class="t-c">cat status.txt</span></div>
-          <div class="t-o">→ <span class="t-v" style="color:var(--red)">SEEKING CO-OP 2025</span></div>
-          <div style="margin-top:6px"><span class="t-p">root@sec-box:~$ </span><span class="t-c">cat gpa.txt</span></div>
-          <div class="t-o">→ <span class="t-v">MS: 3.26 // BE: 3.39</span></div>
-          <div style="margin-top:6px"><span class="t-p">root@sec-box:~$ </span><span class="t-c">nmap -sV target</span></div>
-          <div class="t-o">→ <span class="t-v">22/ssh 80/http 443/https open</span></div>
-          <div style="margin-top:6px"><span class="t-p">root@sec-box:~$ </span><span class="t-cur"></span></div>
+        <ul>
+          <li>Run an automated vulnerability discovery pipeline against NeurAlert (ARM Cortex-M, FreeRTOS) using LibFuzzer and Boofuzz in a custom QEMU-based emulated environment — 23+ findings so far</li>
+          <li>Built Python tooling that generates SARIF reports directly from fuzzer crash logs, and maintain the structured firmware dataset behind the lab's ongoing research</li>
+        </ul>
+      </div>
+
+      <div class="job">
+        <div class="job-head">
+          <div><span class="job-role">Data and Event Assistant, Academic Ceremonies</span><br><span class="job-org">Northeastern University</span></div>
+          <span class="job-date">Jan 2026 – Present</span>
         </div>
+        <ul>
+          <li>Manage data integrity for Commencement operations serving 35,000+ graduates across 8 colleges, handling sensitive student records with strict attention to confidentiality</li>
+          <li>Coordinate inventory and cross-team logistics for large-scale, high-volume events under tight timelines</li>
+        </ul>
+      </div>
+
+      <div class="job">
+        <div class="job-head">
+          <div><span class="job-role">Cybersecurity Analyst Intern</span><br><span class="job-org">Cyber Secured India — Mumbai</span></div>
+          <span class="job-date">Jul 2024 – Dec 2024</span>
+        </div>
+        <ul>
+          <li>Ran vulnerability scans and pentests across 8–12 web/mobile apps with Nmap, Metasploit, Burp Suite, and OWASP ZAP, identifying 20+ vulnerabilities including SQLi, XSS, and insecure auth</li>
+          <li>Monitored network traffic and logs with Splunk, Wireshark, and Snort, investigating 100+ security events; ran incident response on 10+ cases using Nikto and Autopsy</li>
+        </ul>
+      </div>
+
+      <div class="job">
+        <div class="job-head">
+          <div><span class="job-role">Cybersecurity Intern</span><br><span class="job-org">VIEH Group Private Limited</span></div>
+          <span class="job-date">Feb 2024 – Apr 2024</span>
+        </div>
+        <ul>
+          <li>Performed web application pentesting with Burp Suite, Nmap, and Metasploit, uncovering 6+ critical vulnerabilities including insecure APIs and weak encryption</li>
+          <li>Wrote Python scripts for network traffic analysis and automated anomaly detection, improving detection accuracy by 30%</li>
+        </ul>
+      </div>
+
+      <div class="job">
+        <div class="job-head">
+          <div><span class="job-role">Professional Development</span><br><span class="job-org">Self-Directed</span></div>
+          <span class="job-date">Ongoing</span>
+        </div>
+        <ul>
+          <li>Working through SOC and Blue Team labs on TryHackMe and solving CTF challenges on PicoCTF to sharpen detection and incident response skills</li>
+          <li>Preparing for the CompTIA Security+ certification</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h2>// skills</h2>
+      <div class="skill-cat">
+        <span class="cat-label">Firmware &amp; Embedded</span>
+        <div class="pill-row">
+          <span class="pill">LibFuzzer</span><span class="pill">Boofuzz</span><span class="pill">QEMU</span><span class="pill">ARM Cortex-M</span><span class="pill">FreeRTOS</span><span class="pill">ASAN</span><span class="pill">SARIF</span><span class="pill">ESP8266</span><span class="pill">Arduino</span><span class="pill">MQTT</span>
+        </div>
+      </div>
+      <div class="skill-cat">
+        <span class="cat-label">Offensive Security</span>
+        <div class="pill-row">
+          <span class="pill">Burp Suite</span><span class="pill">Metasploit</span><span class="pill">Nmap</span><span class="pill">OWASP ZAP</span><span class="pill">Nikto</span><span class="pill">Hydra</span><span class="pill">SQLmap</span><span class="pill">Gobuster</span><span class="pill">Kali Linux</span>
+        </div>
+      </div>
+      <div class="skill-cat">
+        <span class="cat-label">Defensive / SOC</span>
+        <div class="pill-row">
+          <span class="pill">Splunk</span><span class="pill">Wireshark</span><span class="pill">Snort</span><span class="pill">Autopsy</span><span class="pill">MITRE ATT&amp;CK</span><span class="pill">SIEM</span><span class="pill">Alert Tuning</span><span class="pill">Incident Response</span>
+        </div>
+      </div>
+      <div class="skill-cat">
+        <span class="cat-label">Digital Forensics</span>
+        <div class="pill-row">
+          <span class="pill">Autopsy</span><span class="pill">Volatility</span><span class="pill">Binwalk</span><span class="pill">John the Ripper</span>
+        </div>
+      </div>
+      <div class="skill-cat">
+        <span class="cat-label">GRC</span>
+        <div class="pill-row">
+          <span class="pill">NIST SP 800-53</span><span class="pill">NIST CSF 2.0</span><span class="pill">SOC 2</span><span class="pill">ISO 27001</span><span class="pill">Risk Registers</span><span class="pill">FIPS 199</span>
+        </div>
+      </div>
+      <div class="skill-cat">
+        <span class="cat-label">Languages</span>
+        <div class="pill-row">
+          <span class="pill">Python</span><span class="pill">C</span><span class="pill">C++</span><span class="pill">Bash</span><span class="pill">SQL</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h2>// education</h2>
+      <div class="edu-item">
+        <div class="deg">M.S. Electrical &amp; Computer Engineering <span class="when">— Expected Dec 2027</span></div>
+        <div class="school">Northeastern University, Boston, MA</div>
+        <div class="detail">Concentration: Computer Systems &amp; Software</div>
+      </div>
+      <div class="edu-item">
+        <div class="deg">B.E. Electronic &amp; Telecommunication Engineering, Honors in Cybersecurity</div>
+        <div class="school">Dr. D.Y. Patil Institute of Engineering, Management and Research, Pune</div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h2>// extracurricular</h2>
+      <div class="job">
+        <div class="job-head">
+          <div><span class="job-role">CTF Member</span><br><span class="job-org">NUSec, Northeastern University</span></div>
+        </div>
+        <ul>
+          <li>Compete in team-based security competitions on TryHackMe and PicoCTF</li>
+        </ul>
+      </div>
+      <div class="job">
+        <div class="job-head">
+          <div><span class="job-role">Technical Head</span><br><span class="job-org">IEEE Student Branch</span></div>
+          <span class="job-date">2023 – 2024</span>
+        </div>
+        <ul>
+          <li>Directed logistics for workshops and hackathons serving 100+ students; managed registrations, scheduling, resource allocation, and communications to ensure smooth operations</li>
+        </ul>
+      </div>
+      <div class="job">
+        <div class="job-head">
+          <div><span class="job-role">Joint Secretary</span><br><span class="job-org">Talk Club</span></div>
+          <span class="job-date">2023 – 2024</span>
+        </div>
+        <ul>
+          <li>Handled correspondence, attendance records, and scheduling of weekly seminars; managed social media outreach and grew participation by 30% through consistent engagement</li>
+        </ul>
+      </div>
+      <div class="job">
+        <div class="job-head">
+          <div><span class="job-role">Junior Public Manager</span><br><span class="job-org">Entrepreneurship Development Cell (EDC)</span></div>
+          <span class="job-date">2021 – 2022</span>
+        </div>
+        <ul>
+          <li>Coordinated E-Summit'22, a 3-day entrepreneurship event; oversaw logistics, participant management, and communications for 500+ attendees</li>
+        </ul>
+      </div>
+      <div class="job">
+        <div class="job-head">
+          <div><span class="job-role">Event Team Head</span><br><span class="job-org">College Cultural Fest</span></div>
+          <span class="job-date">2021 – 2022</span>
+        </div>
+        <ul>
+          <li>Led end-to-end coordination for multi-day events with 500+ attendees; managed vendor communication, logistics, and on-ground operations across the full event lifecycle</li>
+        </ul>
+      </div>
+      <p class="offduty">Also: 8 years of Bharatanatyam training, and basketball.</p>
+    </div>
+  </section>
+
+  <!-- ============ PROJECTS ============ -->
+  <section class="page" id="page-projects">
+    <p class="eyebrow">ls -la ./projects/</p>
+    <h1>Projects</h1>
+    <p class="lede">Firmware, offensive security, and GRC tooling — filter by track.</p>
+
+    <div class="filter-row" id="filterRow">
+      <button class="on" data-filter="*">*</button>
+      <button data-filter="firmware">firmware</button>
+      <button data-filter="offensive">offensive</button>
+      <button data-filter="ai-security">ai-security</button>
+      <button data-filter="grc">grc</button>
+      <button data-filter="published">published</button>
+    </div>
+
+    <div class="proj-grid" id="projGrid">
+
+      <div class="card" data-tags="firmware offensive" data-repo="Sreenidhi15/ShellGuard-POSIX-Shell-with-Exploit-Research-NIST-Controls">
+        <span class="tag">Systems Security</span>
+        <h3>ShellGuard — POSIX Shell with Exploit Research &amp; NIST Controls</h3>
+        <span class="date">Dec 2025 – Feb 2026</span>
+        <p>A POSIX shell built in C (fork, execvp, pipe, dup2, waitpid, multi-stage pipelines) with an audit logging module mapped to NIST SP 800-53 AU-2/AU-3/AU-9/AU-12. Includes working exploit demos for command injection (CWE-78) and UID spoofing via NFSv4 Kerberos AUTH_SYS downgrade (CWE-287/290), each paired with a hardened fix.</p>
+        <div class="stack"><span>C</span><span>Linux</span><span>NIST 800-53</span></div>
+        <div class="repo-stats" data-loading="1">&nbsp;</div>
+        <a class="link" href="https://github.com/Sreenidhi15/ShellGuard-POSIX-Shell-with-Exploit-Research-NIST-Controls" target="_blank" rel="noopener">View on GitHub →</a>
+      </div>
+
+      <div class="card" data-tags="offensive" data-repo="Sreenidhi15/SOC-Home-Lab">
+        <span class="tag">Offensive Security</span>
+        <h3>SOC Home Lab — Active Directory Attack &amp; Detection</h3>
+        <span class="date">Dec 2025 – Feb 2026</span>
+        <p>A self-built Active Directory environment for practicing common AD attack chains and the corresponding blue-team detections, from initial access through privilege escalation.</p>
+        <div class="stack"><span>Active Directory</span><span>Detection Engineering</span></div>
+        <div class="repo-stats" data-loading="1">&nbsp;</div>
+        <a class="link" href="https://github.com/Sreenidhi15/SOC-Home-Lab" target="_blank" rel="noopener">View on GitHub →</a>
+      </div>
+
+      <div class="card" data-tags="firmware ai-security" data-repo="Sreenidhi15/Adaptive-Reconciliation-Based-Post-Quantum-Key-Exchange-for-Energy-Efficient-IoT-Networks">
+        <span class="tag">Post-Quantum / IoT</span>
+        <h3>Adaptive Reconciliation-Based PQC Key Exchange for IoT</h3>
+        <span class="date">with Cherisma Tanduru · EECE 5155</span>
+        <p>A Module-LWE based post-quantum key exchange protocol for energy-constrained IoT networks, with an efficient error-reconciliation scheme, performance benchmarking, and NS-3 network simulation.</p>
+        <div class="stack"><span>C++</span><span>Module-LWE</span><span>NS-3</span></div>
+        <div class="repo-stats" data-loading="1">&nbsp;</div>
+        <a class="link" href="https://github.com/Sreenidhi15/Adaptive-Reconciliation-Based-Post-Quantum-Key-Exchange-for-Energy-Efficient-IoT-Networks" target="_blank" rel="noopener">View on GitHub →</a>
+      </div>
+
+      <div class="card" data-tags="ai-security">
+        <span class="tag">Detection Engineering</span>
+        <h3>Log Anomaly Detector</h3>
+        <p>ML-powered anomaly detection for Windows Event Logs using Isolation Forest, with findings mapped to MITRE ATT&amp;CK and output formatted for SOAR ingestion.</p>
+        <div class="stack"><span>Python</span><span>Isolation Forest</span><span>MITRE ATT&amp;CK</span></div>
+        <a class="link" href="https://github.com/Sreenidhi15" target="_blank" rel="noopener">View on GitHub →</a>
+      </div>
+
+      <div class="card" data-tags="grc ai-security">
+        <span class="tag">GRC</span>
+        <h3>AI-Powered GRC Compliance Gap Analyzer</h3>
+        <p>A control-mapping tool spanning NIST SP 800-53, SOC 2, and ISO 27001, backed by a SQLite FTS5 control database and the OpenAI API for gap analysis against uploaded policy documents.</p>
+        <div class="stack"><span>Python</span><span>SQLite FTS5</span><span>OpenAI API</span></div>
+        <a class="link" href="https://github.com/Sreenidhi15" target="_blank" rel="noopener">View on GitHub →</a>
+      </div>
+
+      <div class="card" data-tags="offensive firmware" data-repo="Sreenidhi15/Portable-Ddos-Attack-Simulation-Tool">
+        <span class="tag">Networking</span>
+        <h3>Portable DDoS Attack Simulation Tool</h3>
+        <p>An ESP8266-based portable DDoS simulator, built as an educational research project for network security training and controlled penetration testing.</p>
+        <div class="stack"><span>C++</span><span>ESP8266</span></div>
+        <div class="repo-stats" data-loading="1">&nbsp;</div>
+        <a class="link" href="https://github.com/Sreenidhi15/Portable-Ddos-Attack-Simulation-Tool" target="_blank" rel="noopener">View on GitHub →</a>
+      </div>
+
+      <div class="card" data-tags="offensive" data-repo="Sreenidhi15/Packet-Sniffer-tool">
+        <span class="tag">Networking</span>
+        <h3>Packet Sniffer Tool</h3>
+        <p>A low-level network packet sniffer built with raw sockets in Python, parsing Ethernet, IPv4, TCP, UDP, and ICMP frames directly off the wire.</p>
+        <div class="stack"><span>Python</span><span>Raw Sockets</span></div>
+        <div class="repo-stats" data-loading="1">&nbsp;</div>
+        <a class="link" href="https://github.com/Sreenidhi15/Packet-Sniffer-tool" target="_blank" rel="noopener">View on GitHub →</a>
+      </div>
+
+      <div class="card pub" data-tags="published firmware" data-repo="Sreenidhi15/Cloud-Storage-Connected-Security-Safe">
+        <span class="tag">Published · IJRASET 2022</span>
+        <h3>Cloud Storage Connected Security Safe</h3>
+        <p>A physical security safe concept connected to cloud storage for remote monitoring and access control, published in the International Journal for Research in Applied Science &amp; Engineering Technology.</p>
+        <div class="repo-stats" data-loading="1">&nbsp;</div>
+        <a class="link" href="https://github.com/Sreenidhi15/Cloud-Storage-Connected-Security-Safe" target="_blank" rel="noopener">View on GitHub →</a>
+      </div>
+
+      <div class="card pub" data-tags="published">
+        <span class="tag">Published · IJERT / ICSCSET 2025</span>
+        <h3>PrepPal — Peer Matchmaking to Combat Study Isolation</h3>
+        <p>A peer matchmaking platform tackling study isolation among students, published in IJERT Vol. 14 (April 2025) and presented at ICSCSET 2025.</p>
+        <a class="link" href="https://www.ijert.org/preppal-your-go-to-website-for-study-mates-and-exam-preparation" target="_blank" rel="noopener">Read the paper →</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ BLOG ============ -->
+  <section class="page" id="page-blog">
+    <p class="eyebrow">cat blog/*.log</p>
+    <h1>Writeups</h1>
+    <p class="lede">Notes from the lab and from CTFs — drafts in progress, published as I finish them.</p>
+
+    <div class="post post-full">
+      <div class="post-head">
+        <span class="status published">Published</span>
+        <span class="post-date">Feb 12, 2026 · 1 min read</span>
+      </div>
+      <h3>Welcome to My Blog</h3>
+      <span class="post-tag">meta / welcome</span>
+      <p>Welcome to my corner of the internet. This is where I'll be writing up what I'm actually doing in the lab and in CTFs — firmware fuzzing notes, SOC and blue team practice, and whatever breaks (or doesn't) along the way.</p>
+
+      <h4>What to Expect</h4>
+      <ul class="post-list">
+        <li><strong>Firmware &amp; Embedded Notes</strong> — Fuzzing harnesses, QEMU emulation quirks, and what a real reproducible crash looks like on ARM Cortex-M targets</li>
+        <li><strong>SOC &amp; Blue Team Writeups</strong> — Walkthroughs from TryHackMe rooms and PicoCTF challenges as I work through them</li>
+        <li><strong>Security Research</strong> — Vulnerability analysis and detection engineering notes from CactiLab and independent projects</li>
+        <li><strong>Career &amp; Learning</strong> — What's actually helping (or not) in my M.S. ECE journey and CompTIA Security+ prep</li>
+      </ul>
+
+      <h4>Why a Blog?</h4>
+      <p>I fuzz firmware for a living, but writing about it is a different muscle. Explaining a crash well enough for someone else to reproduce it forces me to actually understand it — and firmware security still doesn't have enough plain-language writing out there. I'd rather add to that than not.</p>
+
+      <h4>Sample: Quick GDB + QEMU Reference for Firmware Debugging</h4>
+      <p>A few commands I reach for constantly when triaging a fuzzer crash on an emulated Cortex-M target:</p>
+      <pre class="codeblock"><code># Attach GDB to a QEMU gdbserver session
+gdb-multiarch ./firmware.elf
+(gdb) target remote localhost:1234
+
+# Set a breakpoint at the crash handler and continue
+(gdb) break HardFault_Handler
+(gdb) continue
+
+# Inspect the fault status register after a crash
+(gdb) print/x *(uint32_t*)0xE000ED28
+
+# Walk the stack to find the return address that faulted
+(gdb) bt full
+
+# Dump memory around the faulting address
+(gdb) x/16xw $sp</code></pre>
+      <p class="post-tip">Tip: always confirm you're working against an isolated emulation target, never a live device, before you start throwing malformed input at anything.</p>
+
+      <h4>Stay Tuned</h4>
+      <p>More writeups coming as I finish them. In the meantime, feel free to check out my <a href="#" data-goto="projects">projects</a> or <a href="#" data-goto="contact">get in touch</a>.</p>
+    </div>
+
+    <div class="post">
+      <div class="post-head">
+        <span class="status idea">Draft</span>
+        <span class="post-date">In progress</span>
+      </div>
+      <h3>Fuzzing ARM Cortex-M Firmware: LibFuzzer + Boofuzz in a QEMU Harness</h3>
+      <p>Notes on building a fuzzing harness for FreeRTOS-based firmware in an emulated environment — where LibFuzzer and Boofuzz disagree, and what a reproducible crash actually looks like on this target.</p>
+    </div>
+
+    <div class="post">
+      <div class="post-head">
+        <span class="status idea">Draft</span>
+        <span class="post-date">In progress</span>
+      </div>
+      <h3>From Crash Log to SARIF: Automating Vulnerability Reports</h3>
+      <p>How a Python pipeline turns raw fuzzer crash output into structured, tool-agnostic SARIF reports — and the edge cases that broke the first three versions of it.</p>
+    </div>
+
+    <div class="post">
+      <div class="post-head">
+        <span class="status idea">Idea</span>
+        <span class="post-date">Not started</span>
+      </div>
+      <h3>NUSec CTF Writeup: [pick a challenge]</h3>
+      <p>Placeholder for a writeup from a TryHackMe or PicoCTF challenge worth documenting.</p>
+    </div>
+
+    <p class="blog-empty-note">The three posts below the welcome post are placeholders tied to real work — swap in your own writing whenever a post is ready.</p>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section class="page" id="page-contact">
+    <p class="eyebrow">./contact</p>
+    <h1>Let's talk</h1>
+    <p class="lede">Looking for security internships and co-ops across SOC, GRC, security engineering, and hardware/firmware security for 2027. F-1 visa, CPT-eligible. Reach out — I'd love to hear what you're working on.</p>
+
+    <div class="contact-grid">
+      <div class="contact-card">
+        <span class="k">Email</span>
+        <span class="v" id="emailText">ramani.sr@northeastern.edu</span>
+        <button class="copy-btn" id="copyEmailBtn">copy</button>
+      </div>
+      <div class="contact-card">
+        <span class="k">LinkedIn</span>
+        <span class="v"><a href="https://www.linkedin.com/in/sreenidhiramani/" target="_blank" rel="noopener">/in/sreenidhiramani</a></span>
+      </div>
+      <div class="contact-card">
+        <span class="k">GitHub</span>
+        <span class="v"><a href="https://github.com/Sreenidhi15" target="_blank" rel="noopener">/Sreenidhi15</a></span>
+      </div>
+      <div class="contact-card">
+        <span class="k">TryHackMe</span>
+        <span class="v"><a href="https://tryhackme.com/p/Ciph3r15" target="_blank" rel="noopener">Ciph3r15</a></span>
+      </div>
+      <div class="contact-card">
+        <span class="k">Location</span>
+        <span class="v">Boston, MA</span>
       </div>
     </div>
   </section>
 
-  <section id="education">
-    <div class="container">
-      <div class="sec-header"><span class="sec-num">00</span><h2 class="sec-title">CLEARANCE LEVEL</h2><div class="sec-line"></div></div>
-      <div class="edu-grid">
-        <div class="edu-card fi">
-          <div class="edu-degree">M.S. Electrical &amp; Computer Engineering</div>
-          <div class="edu-school">// NORTHEASTERN UNIVERSITY — BOSTON, MA</div>
-          <div class="edu-meta">Concentration: Computer Systems &amp; Software<br>GPA: <span>3.26</span> &nbsp;|&nbsp; Expected: <span>Dec 2027</span><br>Coursework: Network Security, Operating Systems, Wireless Sensor/IoT, Fundamentals of Computer Engineering</div>
-        </div>
-        <div class="edu-card fi">
-          <div class="edu-degree">B.E. Electronic &amp; Telecommunication</div>
-          <div class="edu-school">// DR. D. Y. PATIL INSTITUTE — PUNE, INDIA</div>
-          <div class="edu-meta">Honors in Cybersecurity<br>GPA: <span>3.39</span><br>Coursework: Computer Networks, IoT &amp; Embedded Security, Cloud Computing, Data Structures, OS</div>
-        </div>
-      </div>
-    </div>
-  </section>
+</main>
 
-  <section id="skills">
-    <div class="container">
-      <div class="sec-header"><span class="sec-num">01</span><h2 class="sec-title">ARSENAL</h2><div class="sec-line"></div></div>
-      <div class="skills-grid">
-        <div class="sk-card fi"><div class="sk-cat">// PENETRATION TESTING</div><div class="sk-tags"><span class="sk-tag">Nmap</span><span class="sk-tag">Burp Suite</span><span class="sk-tag">Metasploit</span><span class="sk-tag">SQLmap</span><span class="sk-tag">OWASP ZAP</span><span class="sk-tag">Gobuster</span><span class="sk-tag">Hydra</span><span class="sk-tag">Netcat</span></div></div>
-        <div class="sk-card fi"><div class="sk-cat">// WEB & API SECURITY</div><div class="sk-tags"><span class="sk-tag">SQLi</span><span class="sk-tag">XSS</span><span class="sk-tag">CSRF</span><span class="sk-tag">API Fuzzing</span><span class="sk-tag">OWASP Top 10</span><span class="sk-tag">Insecure Auth</span></div></div>
-        <div class="sk-card fi"><div class="sk-cat">// SECURITY ANALYSIS & FORENSICS</div><div class="sk-tags"><span class="sk-tag">Wireshark</span><span class="sk-tag">Splunk</span><span class="sk-tag">Snort</span><span class="sk-tag">Volatility</span><span class="sk-tag">Autopsy</span><span class="sk-tag">Malware Analysis</span><span class="sk-tag">Incident Response</span></div></div>
-        <div class="sk-card fi"><div class="sk-cat">// PROGRAMMING & SCRIPTING</div><div class="sk-tags"><span class="sk-tag">Python</span><span class="sk-tag">C / C++</span><span class="sk-tag">Bash</span><span class="sk-tag">PowerShell</span><span class="sk-tag">JavaScript</span><span class="sk-tag">SQL</span></div></div>
-        <div class="sk-card fi"><div class="sk-cat">// OPERATING SYSTEMS & INFRA</div><div class="sk-tags"><span class="sk-tag">Kali Linux</span><span class="sk-tag">Ubuntu</span><span class="sk-tag">Windows Server</span><span class="sk-tag">Active Directory</span><span class="sk-tag">Baseline Hardening</span><span class="sk-tag">AWS / Azure</span></div></div>
-        <div class="sk-card fi"><div class="sk-cat">// IoT & EMBEDDED</div><div class="sk-tags"><span class="sk-tag">Arduino</span><span class="sk-tag">ESP8266</span><span class="sk-tag">MQTT</span><span class="sk-tag">ICS/OT Security</span><span class="sk-tag">IEC 62443</span><span class="sk-tag">Firmware Hardening</span></div></div>
-      </div>
-    </div>
-  </section>
+<footer>echo "© 2026 Sreenidhi Ramani. Compiled with GCC and too much coffee."</footer>
 
-  <section id="experience">
-    <div class="container">
-      <div class="sec-header"><span class="sec-num">02</span><h2 class="sec-title">FIELD OPS</h2><div class="sec-line"></div></div>
-      <div class="exp-list">
-        <div class="exp-card fi">
-          <div class="exp-top"><div class="exp-title">Cybersecurity Analyst Intern</div><div class="exp-date">JUL 2024 — DEC 2024</div></div>
-          <div class="exp-co">// CYBER SECURED INDIA — PUNE, INDIA</div>
-          <ul class="exp-ul">
-            <li>Conducted penetration tests on 8–12 web and mobile applications using Burp Suite, Metasploit, SQLmap, and OWASP ZAP — exploiting SQLi, XSS, and insecure auth; documented 20+ security issues with remediation guidance</li>
-            <li>Developed Python scripts to automate network traffic analysis, vulnerability scanning workflows, and anomaly detection</li>
-            <li>Triaged 100+ security events in Splunk, Wireshark, and Snort; executed response for 10+ incidents using Nikto and Autopsy — forensic analysis, privilege audits, and containment</li>
-            <li>Applied baseline hardening across AWS and Azure: IAM policy enforcement, least-privilege controls, compliance-aligned configuration reviews, reducing security incidents by 15%</li>
-          </ul>
-        </div>
-        <div class="exp-card fi">
-          <div class="exp-top"><div class="exp-title">Cybersecurity Intern</div><div class="exp-date">JAN 2024 — APR 2024</div></div>
-          <div class="exp-co">// VIEH GROUP PRIVATE LIMITED — MUMBAI, INDIA</div>
-          <ul class="exp-ul">
-            <li>Performed black-box and gray-box web application penetration testing using Burp Suite, Nmap, and Metasploit — uncovered 6+ vulnerabilities including insecure APIs, weak encryption, and server misconfigurations</li>
-            <li>Built Python automation scripts for security testing and log analysis; implemented fixes for insecure API endpoints and cryptographic weaknesses, improving anomaly detection accuracy by 30%</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
+<script>
+  // ---------- NAV ROUTING ----------
+  const tabs = document.querySelectorAll('nav.tabs button');
+  const pages = document.querySelectorAll('section.page');
 
-  <section id="projects">
-    <div class="container">
-      <div class="sec-header"><span class="sec-num">03</span><h2 class="sec-title">OPERATIONS</h2><div class="sec-line"></div></div>
-      <div class="proj-grid">
-        <div class="proj-card fi"><div class="proj-id">PROJECT_001 // SEP 2025 — ONGOING</div><div class="proj-name">POST-QUANTUM SECURE COMMS (LWE) FOR IoT</div><div class="proj-desc">Implemented quantum-resistant LWE encryption in Python for resource-constrained IoT devices, achieving sub-100ms latency. Built NS-3 test environments to validate protocol performance across multiple simulated threat scenarios.</div><div class="proj-stack"><span class="proj-tag">Python</span><span class="proj-tag">NS-3</span><span class="proj-tag">LWE</span><span class="proj-tag">IoT Security</span><span class="proj-tag">Post-Quantum</span></div></div>
-        <div class="proj-card fi"><div class="proj-id">PROJECT_002 // AUG 2024 — MAY 2025</div><div class="proj-name">PREPPAL: SMART PEER MATCHMAKING PLATFORM</div><div class="proj-desc">Built a secure web platform with auth hardening, input validation, and secure session management. Performed threat modeling and mitigated common web vulnerabilities during development.</div><div class="proj-stack"><span class="proj-tag">Web Security</span><span class="proj-tag">Auth Hardening</span><span class="proj-tag">Threat Modeling</span><span class="proj-tag">OWASP</span></div><div class="proj-pub">📄 <a href="https://www.ijert.org/preppal-your-go-to-website-for-study-mates-and-exam-preparation" target="_blank" rel="noopener" style="color:var(--green);text-decoration:none;border-bottom:1px dashed var(--green);">Published: IJERT Vol. 14</a> // Presented: ICSCSET 2025</div></div>
-        <div class="proj-card fi"><div class="proj-id">PROJECT_003 // JUN 2023 — DEC 2023</div><div class="proj-name">PORTABLE DDoS ATTACK SIMULATION TOOL</div><div class="proj-desc">Engineered a portable attack simulation tool using ESP8266 and Android to emulate real-world DDoS behavior. Automated attack sequences, measured network impact on latency and stability, documented OT/industrial mitigation strategies.</div><div class="proj-stack"><span class="proj-tag">ESP8266</span><span class="proj-tag">Arduino</span><span class="proj-tag">Network Analysis</span><span class="proj-tag">ICS/OT</span></div></div>
-        <div class="proj-card fi"><div class="proj-id">PROJECT_004 // DEC 2021 — AUG 2022</div><div class="proj-name">CLOUD STORAGE CONNECTED SECURITY SAFE</div><div class="proj-desc">Developed a hybrid physical/cloud secure storage system using Google Cloud, biometric authentication, and Python. Applied encryption and access control principles throughout.</div><div class="proj-stack"><span class="proj-tag">Python</span><span class="proj-tag">Google Cloud</span><span class="proj-tag">Biometric Auth</span><span class="proj-tag">Encryption</span></div><div class="proj-pub">📄 <a href="https://www.ijert.org/cloud-storage-connected-security-safe" target="_blank" rel="noopener" style="color:var(--green);text-decoration:none;border-bottom:1px dashed var(--green);">Published: IJERT 2022</a></div></div>
-      </div>
-    </div>
-  </section>
+  function goto(pageId){
+    pages.forEach(p => p.classList.toggle('active', p.id === 'page-' + pageId));
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.page === pageId));
+    history.replaceState(null, '', '#' + pageId);
+    window.scrollTo({top:0, behavior:'instant' in window ? 'instant' : 'auto'});
+  }
 
-  <section id="ctf-awards">
-    <div class="container">
-      <div class="sec-header"><span class="sec-num">04</span><h2 class="sec-title">INTEL &amp; RECON</h2><div class="sec-line"></div></div>
-      <div class="ctf-grid">
-        <div class="ctf-c fi"><div class="ctf-icon">🚩</div><div class="ctf-name">NUSec CTF TEAM</div><div class="ctf-det">Active competing member of Northeastern's CTF team since Sep 2025. Web exploitation, reverse engineering, and cryptography.</div></div>
-        <div class="ctf-c fi"><div class="ctf-icon">🔐</div><div class="ctf-name">NU CYBERSECURITY CLUB</div><div class="ctf-det">Active member. Security workshops and on-campus CTF events at Northeastern University.</div></div>
-        <div class="ctf-c fi"><div class="ctf-icon">⚔️</div><div class="ctf-name">HACKTHEBOX</div><div class="ctf-det">Regular practice since Sep 2025 — privilege escalation, web exploitation, and binary challenges.</div></div>
-        <div class="ctf-c fi"><div class="ctf-icon">🔒</div><div class="ctf-name">TRYHACKME</div><div class="ctf-det">Offensive and defensive security paths — web app exploitation, privilege escalation, CTF-style challenges.</div></div>
-      </div>
-    </div>
-  </section>
+  tabs.forEach(t => t.addEventListener('click', () => goto(t.dataset.page)));
+  document.querySelectorAll('[data-goto]').forEach(btn =>
+    btn.addEventListener('click', (e) => { e.preventDefault(); goto(btn.dataset.goto); })
+  );
 
-  <section id="contact">
-    <div class="container">
-      <div class="sec-header" style="justify-content:center;flex-direction:column;gap:8px;">
-        <span class="sec-num">05</span><h2 class="sec-title">ESTABLISH COMMS</h2>
-      </div>
-      <div class="con-inner">
-        <div class="con-tag fi">OPEN TO CYBERSECURITY CO-OPS // BOSTON &amp; REMOTE</div>
-        <div class="con-email fi">ramani.sr&#64;northeastern.edu</div>
-        <div class="con-links fi">
-          <a href="https://www.linkedin.com/in/sreenidhiramani/" target="_blank" class="con-link">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-            LINKEDIN
-          </a>
-          <a href="https://github.com/Sreenidhi15" target="_blank" class="con-link">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
-            GITHUB
-          </a>
-          <a href="tel:8572648791" class="con-link">📞 857-264-8791</a>
-        </div>
-      </div>
-    </div>
-  </section>
+  const initial = (location.hash || '#home').slice(1);
+  if (document.getElementById('page-' + initial)) goto(initial);
 
-  <footer>
-    <span>SREENIDHI RAMANI // NORTHEASTERN UNIVERSITY</span>
-    <span>BOSTON, MA // 857-264-8791</span>
-    <span>© 2025 // ALL RIGHTS RESERVED</span>
-  </footer>
-</div>
-
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-  // Caesar ROT13: "r00t@sec" → "e00g@frp"
-  // Caesar ROT13: "root@sr" → "ebbg@fe"
-  const ANSWER = 'root@sr';
-
-  // ---- BOOT ----
+  // ---------- BOOT CONSOLE ----------
   const bootLines = [
-    { text: 'BIOS v2.7.1 ... OK',                       cls:'b-dim',   delay:0    },
-    { text: 'Loading kernel modules ... OK',             cls:'b-dim',   delay:200  },
-    { text: 'Mounting encrypted volumes ... OK',         cls:'b-dim',   delay:380  },
-    { text: 'Starting firewall daemon ... OK',           cls:'b-dim',   delay:560  },
-    { text: '',                                          cls:'',        delay:700  },
-    { text: '[ WARNING: UNAUTHORIZED ACCESS ATTEMPT ]', cls:'b-red',   delay:820  },
-    { text: 'Intrusion logged. Flagging IP ...',         cls:'b-red',   delay:1020 },
-    { text: 'Initiating cryptographic lockdown ...',     cls:'b-red',   delay:1220 },
-    { text: '',                                          cls:'',        delay:1380 },
-    { text: '[ CHALLENGE MODE ACTIVATED ]',              cls:'b-green', delay:1500 },
+    ["[  0.000000] ", "sreenidhi-os booting on Cortex-M4 emulation target..."],
+    ["[  0.041223] ", "mounting /dev/firmware ...", "ok"],
+    ["[  0.118900] ", "loading module: libfuzzer_harness.ko ...", "ok"],
+    ["[  0.220441] ", "loading module: boofuzz_pipeline.ko ...", "ok"],
+    ["[  0.402117] ", "attaching to QEMU emulated NeurAlert target ...", "warn"],
+    ["[  0.512300] ", "CactiLab research assistant: ONLINE", "ok"],
+    ["[  0.600011] ", "23+ vulnerabilities logged this session"],
   ];
+  const consoleEl = document.getElementById('bootConsole');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const bootEl = document.getElementById('boot-text');
-  bootLines.forEach(({ text, cls, delay }) => {
-    setTimeout(() => {
-      const s = document.createElement('span');
-      s.className = 'boot-line ' + cls;
-      s.textContent = text || '\u00A0';
-      bootEl.appendChild(s);
-    }, delay);
+  function renderLine([prefix, text, tag]){
+    const span = tag === 'ok' ? `<span class="ok">${text}</span>`
+               : tag === 'warn' ? `<span class="warn">${text}</span>`
+               : text;
+    return `<span class="mono" style="color:var(--muted)">${prefix}</span>${span}`;
+  }
+
+  if (reduced){
+    consoleEl.innerHTML = bootLines.map(renderLine).join('\n') + '\n<span class="cursor-line">$ <span class="cursor"></span></span>';
+  } else {
+    let i = 0;
+    function typeNext(){
+      if (i >= bootLines.length){
+        consoleEl.innerHTML += '\n<span class="cursor-line">$ <span class="cursor"></span></span>';
+        return;
+      }
+      consoleEl.innerHTML += (i > 0 ? '\n' : '') + renderLine(bootLines[i]);
+      i++;
+      setTimeout(typeNext, 260 + Math.random()*180);
+    }
+    typeNext();
+  }
+
+  // ---------- LIVE GITHUB STATS ----------
+  document.querySelectorAll('.card[data-repo]').forEach(card => {
+    const repo = card.dataset.repo;
+    const statsEl = card.querySelector('.repo-stats');
+    if (!statsEl) return;
+    fetch(`https://api.github.com/repos/${repo}`)
+      .then(res => { if (!res.ok) throw new Error('rate limited or not found'); return res.json(); })
+      .then(data => {
+        const stars = data.stargazers_count ?? 0;
+        const updated = data.pushed_at ? new Date(data.pushed_at) : null;
+        const updatedStr = updated
+          ? updated.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+          : null;
+        statsEl.innerHTML =
+          `<span class="star">★ ${stars}</span>` +
+          (updatedStr ? `<span>updated ${updatedStr}</span>` : '');
+      })
+      .catch(() => { statsEl.style.display = 'none'; });
   });
 
-  setTimeout(() => {
-    const boot = document.getElementById('boot-screen');
-    boot.classList.add('fade-out');
-    setTimeout(() => {
-      boot.style.display = 'none';
-      document.getElementById('ctf-screen').classList.add('active');
-      document.getElementById('ctf-input').focus();
-    }, 600);
-  }, 2200);
-
-  // ---- CTF ----
-  let wrong = 0;
-  const input    = document.getElementById('ctf-input');
-  const feedback = document.getElementById('feedback');
-  const hintLine = document.getElementById('hint-line');
-  const dots     = [document.getElementById('d1'), document.getElementById('d2'), document.getElementById('d3')];
-
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
-
-  function checkAnswer() {
-    const val = input.value.trim();
-    if (!val) return;
-
-    if (val === ANSWER) {
-      input.classList.add('success');
-      feedback.textContent = '✓ access granted';
-      feedback.className = 'feedback-line granted';
-      document.getElementById('submit-btn').disabled = true;
-      input.disabled = true;
-      setTimeout(unlockPortfolio, 1200);
-    } else {
-      wrong++;
-      // light up a dot
-      if (wrong <= 3) dots[wrong - 1].classList.add('wrong');
-
-      input.classList.add('shake');
-      setTimeout(() => input.classList.remove('shake'), 420);
-
-      feedback.textContent = wrong === 1 ? 'incorrect.' : wrong === 2 ? 'try again.' : 'wrong.';
-      feedback.className = 'feedback-line denied';
-      input.value = '';
-      input.focus();
-
-      // hint after 1
-      if (wrong >= 1) hintLine.classList.add('visible');
-    }
-  }
-
-  function unlockPortfolio() {
-    const ctf = document.getElementById('ctf-screen');
-    ctf.classList.add('cracked');
-    setTimeout(() => {
-      ctf.style.display = 'none';
-      const port = document.getElementById('portfolio');
-      port.style.display = 'block';
-      requestAnimationFrame(() => {
-        port.classList.add('visible');
-        initFadeIns();
-      });
-    }, 900);
-  }
-
-  function initFadeIns() {
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach((e, i) => {
-        if (e.isIntersecting) setTimeout(() => e.target.classList.add('vis'), i * 70);
-      });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.fi').forEach(el => obs.observe(el));
-    document.querySelectorAll('.hero .fi').forEach((el, i) => {
-      setTimeout(() => el.classList.add('vis'), i * 140 + 200);
+  // ---------- PROJECT FILTER ----------
+  const filterBtns = document.querySelectorAll('#filterRow button');
+  const cards = document.querySelectorAll('#projGrid .card');
+  filterBtns.forEach(btn => btn.addEventListener('click', () => {
+    filterBtns.forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    const f = btn.dataset.filter;
+    cards.forEach(c => {
+      const tags = c.dataset.tags || '';
+      c.style.display = (f === '*' || tags.includes(f)) ? '' : 'none';
     });
-  }
+  }));
+
+  // ---------- COPY EMAIL ----------
+  const copyBtn = document.getElementById('copyEmailBtn');
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(document.getElementById('emailText').textContent).then(() => {
+      copyBtn.textContent = 'copied!';
+      setTimeout(() => copyBtn.textContent = 'copy', 1500);
+    });
+  });
 </script>
+
 </body>
 </html>
