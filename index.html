@@ -110,15 +110,16 @@
   p{ color:var(--fg-dim); margin:0 0 14px; }
   .lede{ font-size:17px; color:var(--fg); max-width:640px; }
 
-  .about-hero{ display:flex; justify-content:space-between; align-items:flex-start; gap:32px; flex-wrap:wrap; }
+  .about-hero{ display:flex; justify-content:space-between; align-items:stretch; gap:32px; flex-wrap:wrap; }
   .about-hero-text{ flex:1; min-width:260px; }
   .about-photo{
-    width:220px; height:220px; object-fit:cover; border-radius:var(--radius);
+    width:260px; object-fit:cover; border-radius:var(--radius);
     border:1px solid var(--border-bright); background:var(--bg-inset); flex-shrink:0;
+    align-self:stretch;
   }
   @media (max-width:700px){
     .about-hero{ flex-direction:column-reverse; }
-    .about-photo{ width:100%; height:260px; }
+    .about-photo{ width:100%; height:280px; }
   }
 
   code, .mono{ font-family:var(--mono); }
@@ -402,14 +403,11 @@
         <p class="eyebrow">about.txt</p>
         <h1>whoami</h1>
         <p class="lede">I study how embedded systems fail before an attacker finds out first. Most of my time right now goes into fuzzing firmware on a seizure-detection wristband — but the throughline across everything I do is the same question: <em>how does this actually break?</em></p>
+        <p>I'm a Cybersecurity Graduate Student at Northeastern University conducting firmware security research and building automated vulnerability discovery tooling. Previously, I worked across offensive and defensive security in Mumbai, running penetration tests and supporting incident response for live security events.</p>
+        <p>Today, I focus on SOC and blue team work, penetration testing, and embedded security, alongside CTF competition with Northeastern's NUSec team. Full experience details below.</p>
+        <p class="eyebrow" style="margin-top:18px;">Currently seeking cybersecurity Full-time opportunities for 2026</p>
       </div>
       <img class="about-photo" src="profile.jpg" alt="Sreenidhi Ramani" onerror="this.style.display='none'">
-    </div>
-
-    <div class="section-block">
-      <p>I'm a Cybersecurity Graduate Student at Northeastern University conducting firmware security research and building automated vulnerability discovery tooling. Previously, I worked across offensive and defensive security in Mumbai, running penetration tests and supporting incident response for live security events.</p>
-      <p>Today, I focus on SOC and blue team work, penetration testing, and embedded security, alongside CTF competition with Northeastern's NUSec team. Full experience details below.</p>
-      <p class="eyebrow" style="margin-top:18px;">Currently seeking cybersecurity Full-time opportunities for 2026</p>
     </div>
 
     <div class="section-block">
